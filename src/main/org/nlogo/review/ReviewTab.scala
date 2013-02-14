@@ -31,12 +31,13 @@ class ReviewTab(
   with window.ReviewTabInterface
   with window.Events.BeforeLoadEventHandler {
 
-  def loadedRuns: Seq[api.ModelRun] = tabState.runs
-  def loadRun(inputStream: java.io.InputStream): Unit = {
+  override def loadedRuns: Seq[api.ModelRun] = tabState.runs
+  override def loadRun(inputStream: java.io.InputStream): Unit = {
     val run = ModelRunIO.load(inputStream)
     tabState.addRun(run)
     loadModelIfNeeded(run.modelString)
   }
+  override def currentRun: Option[api.ModelRun] = tabState.currentRun
 
   private def workspaceWidgets =
     Option(ws.viewWidget.findWidgetContainer)
@@ -139,8 +140,8 @@ class ReviewTab(
     val image = org.nlogo.awt.Images.paintToImage(
       ws.viewWidget.findWidgetContainer.asInstanceOf[java.awt.Component])
 
-    val name = Option(ws.getModelFileName)
-      .map(path => tabState.uniqueName(nameFromPath(path)))
+    val name = Option(ws.getModelFileName).map(nameFromPath)
+      .orElse(tabState.currentRun.map(_.name))
       .getOrElse("Untitled")
     val run = new ModelRun(name, saveModel(), viewArea, image, "", Map())
     tabState.addRun(run)
@@ -445,8 +446,7 @@ class ReviewTab(
         .asInstanceOf[String])
       if answer.nonEmpty
     } {
-      run.name = "" // not to interfere with uniqueName
-      run.name = tabState.uniqueName(answer)
+      run.name = answer
       refreshInterface()
     }
   }
