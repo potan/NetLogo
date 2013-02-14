@@ -22,15 +22,17 @@
       <sourceFolder url="file://$MODULE_DIR$/src/main" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/extensions/matrix/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/extensions/array/classes" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/extensions/unit-test/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/tools" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/plugins/ReviewTab/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/headless/src/main" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/headless/src/test" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/extensions/sample" />
-      <excludeFolder url="file://$MODULE_DIR$/extensions/sample-scala" />
-      <excludeFolder url="file://$MODULE_DIR$/plugins/ReviewTab/classes" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/table/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/shell/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/profiler/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/web/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/props/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/sample/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/bitmap/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/extensions/array/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/project/build/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
@@ -74,6 +76,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="all" level="project" />
+    <orderEntry type="library" name="gst-video" level="project" />
   </component>
 </module>
 

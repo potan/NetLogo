@@ -3,6 +3,7 @@
   <component name="ScalacSettings">
     <option name="COMPILER_LIBRARY_NAME" value="Scala" />
     <option name="COMPILER_LIBRARY_LEVEL" value="Global" />
+    <option name="VM_PARAMETERS" value="-Xms768m -Xss1m -server -feature" />
   </component>
 </project>
 
