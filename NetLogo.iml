@@ -35,12 +35,12 @@
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="jdk" jdkName="1.6 (Oracle)" jdkType="JavaSDK" />
-    <orderEntry type="library" name="Scala 2.9.2" level="application" />
+    <orderEntry type="library" name="Scala" level="application" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/target/resource_managed" />
+          <root url="file://$MODULE_DIR$/headless/target/resource_managed" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -50,6 +50,15 @@
       <library>
         <CLASSES>
           <root url="file://$MODULE_DIR$/resources" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/headless/resources" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

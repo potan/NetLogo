@@ -2,8 +2,6 @@
   <library name="all">
     <CLASSES>
       <root url="file://$PROJECT_DIR$/lib_managed/jars/steveroy/mrjadapter" />
-      <root url="file://$PROJECT_DIR$/lib_managed/jars/org.scalatest/scalatest_2.9.2" />
-      <root url="file://$PROJECT_DIR$/lib_managed/jars/org.scalacheck/scalacheck_2.9.2" />
       <root url="file://$PROJECT_DIR$/lib_managed/jars/org.scala-tools.testing/test-interface" />
       <root url="file://$PROJECT_DIR$/lib_managed/jars/org.picocontainer/picocontainer" />
       <root url="file://$PROJECT_DIR$/lib_managed/jars/org.objenesis/objenesis" />
@@ -30,9 +28,11 @@
       <root url="jar://$PROJECT_DIR$/lib_managed/jars/org.apache.httpcomponents/httpclient/httpclient-4.2.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib_managed/jars/commons-logging/commons-logging/commons-logging-1.1.1.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib_managed/jars/commons-codec/commons-codec/commons-codec-1.6.jar!/" />
-      <root url="jar://$PROJECT_DIR$/lib_managed/jars/com.tristanhunt/knockoff_2.9.2/knockoff_2.9.2-0.8.1.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib_managed/bundles/com.typesafe.akka/akka-actor_2.10/akka-actor_2.10-2.1.0.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib_managed/bundles/com.typesafe/config/config-1.0.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib_managed/jars/org.scalacheck/scalacheck_2.10/scalacheck_2.10-1.10.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib_managed/jars/org.scalatest/scalatest_2.10/scalatest_2.10-2.0.M5b.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib_managed/jars/com.tristanhunt/knockoff_2.10/knockoff_2.10-0.8.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
@@ -61,8 +61,6 @@
     <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/org.objenesis/objenesis" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/org.picocontainer/picocontainer" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/org.scala-tools.testing/test-interface" recursive="false" />
-    <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/org.scalacheck/scalacheck_2.9.2" recursive="false" />
-    <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/org.scalatest/scalatest_2.9.2" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/steveroy/mrjadapter" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/org.hamcrest/hamcrest-core" recursive="false" type="SOURCES" />
     <jarDirectory url="file://$PROJECT_DIR$/lib_managed/jars/org.hamcrest/hamcrest-library" recursive="false" type="SOURCES" />
