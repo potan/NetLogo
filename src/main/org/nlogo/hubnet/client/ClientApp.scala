@@ -67,6 +67,7 @@ class ClientApp extends JFrame("HubNet") with ErrorHandler with ClientAppInterfa
   // This brings us a step closer to being able to be rid of the `LoginCallback` class;
   // can't do away with it quite yet, because `ClientApplet` is still in Java (and, thus,
   // cannot make good use of Scala's first-class functions) --JAB (6/15/2012)
+  import scala.language.implicitConversions
   private lazy val Callback = (user: String, host: String, port: Int) => login(user, host, port)
   implicit def func3ToLoginCallback(func: (String, String, Int) => Unit) = new LoginCallback {
     def apply(user: String, host: String, port: Int) { func(user, host, port) }

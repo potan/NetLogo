@@ -1,16 +1,23 @@
 package org.nlogo.log
 
-import java.net.URL
-import actors.{TIMEOUT, Actor}
-import collection.mutable.ListBuffer
+import
+  scala.{ collection, concurrent },
+    collection.mutable.ListBuffer,
+    concurrent.{ Await, duration },
+      duration._
+
+import
+  java.net.URL
+
+import
+  akka.{ actor, pattern, util },
+    actor.{ Actor, ActorRef, PoisonPill, Props, ReceiveTimeout },
+    pattern.ask,
+    util.Timeout
 
 /*
 
- The `LogDirector` class constitutes a set of three actor classes that work together to manage a log and its periodic flushing
-
- (This thing should be made to use Akka at some point....  Also, I don't feel that `LogDirector` should be
-  doing its own transmissions through `LoggingServerHttpHandler`, but I don't know what else _should_ be
-  responsible for doing them. --JAB (8/14/12))
+ The `LogDirector` class constitutes a set of three Akka actors that work together to manage a log and its periodic flushing
 
  LogDirector:
  -Handles external messages regarding:
@@ -40,49 +47,51 @@ import collection.mutable.ListBuffer
 // An actor controller; receives logging data and figures out what to do with it
 class LogDirector(val mode: LogSendingMode, destinations: URL*) extends Actor {
 
-  import LogManagementMessage.{Write, Abandon, Flush, Read, Finalize}
-  import LoggingServerMessage.{ToServerWrite, ToServerPulse, ToServerAbandon, ToServerFinalize}
+  import LogManagementMessage._
+  import LoggingServerMessage._
 
   require(destinations.size > 0)
 
   // Actors paired with their start conditions
   // This way, if an actor is added into this class, it is unlikely that the programmer will forget to start it
-  private val actorConditionTuple = List((LogBufferManager, true), (LogFlushReminder, mode == LogSendingMode.Continuous))
-  actorConditionTuple foreach (x => if (x._2) x._1.start())
+  private def newActor[T <: Actor : scala.reflect.ClassTag] : ActorRef = context.system.actorOf(Props[T])
 
-  def act() {
-    import DirectorMessage._
-    loop {
-      react {
-        case Flush =>
-          transmitFormatted((LogBufferManager !? Read).asInstanceOf[Seq[String]])
+  private val manager  = newActor[LogBufferManager]
+  private val reminder = newActor[LogFlushReminder]
+  private val director = self
 
-        case ToDirectorWrite(x) =>
-          LogBufferManager ! Write(x)
+  private val actorConditionTuple = List((manager, true), (reminder, mode == LogSendingMode.Continuous))
+  actorConditionTuple foreach (x => if (!x._2) x._1 ! PoisonPill)
 
-        case ToDirectorAbandon =>
-          actorConditionTuple foreach (_._1 ! Abandon)
-          abandonLog()
-          replyClosing()
-          exit("Abandon ye logs, mateys!")
+  import DirectorMessage._
+  override def receive = {
+    case Flush =>
+      implicit val timeout = Timeout(2.seconds)
+      transmitFormatted(Await.result(manager ? Read, timeout.duration).asInstanceOf[Seq[String]])
 
-        case ToDirectorFinalize =>
-          actorConditionTuple map (_._1) filterNot (_ == LogBufferManager) foreach (_ ! Finalize)
-          transmitFormatted((LogBufferManager !? Finalize).asInstanceOf[Seq[String]])
-          finalizeLog()
-          replyClosing()
-          exit("That's a cut!")
-      }
-    }
+    case ToDirectorWrite(x) =>
+      manager ! Write(x)
+
+    case ToDirectorAbandon =>
+      actorConditionTuple foreach (_._1 ! Abandon)
+      abandonLog()
+      sender ! FromDirectorClosed
+      self ! PoisonPill
+
+    case ToDirectorFinalize =>
+      implicit val timeout = Timeout(10.seconds)
+      actorConditionTuple map (_._1) filterNot (_ == manager) foreach (_ ! Finalize)
+      transmitFormatted(Await.result(manager ? Finalize, timeout.duration).asInstanceOf[Seq[String]])
+      finalizeLog()
+      sender ! FromDirectorClosed
+      self ! PoisonPill
   }
-
-  private def replyClosing() { reply(DirectorMessage.FromDirectorClosed) }
 
   private def abandonLog()  { transmit(ToServerAbandon.toString) }
   private def finalizeLog() { transmit(ToServerFinalize.toString) }
 
   private def transmitFormatted(messages: Seq[String]) {
-    val msgListOpt = if (messages filterNot (_.isEmpty) isEmpty) None else Some(messages)
+    val msgListOpt = if (messages.filterNot(_.isEmpty).isEmpty) None else Some(messages)
     msgListOpt map (_ map (ToServerWrite(_).toString)) getOrElse (List(ToServerPulse.toString)) foreach transmit
   }
 
@@ -105,22 +114,18 @@ class LogDirector(val mode: LogSendingMode, destinations: URL*) extends Actor {
 
   This allows a threadsafe way for the buffer to be regularly filled while being periodically read/emptied
    */
-  private object LogBufferManager extends Actor {
+  private class LogBufferManager extends Actor {
 
     // Only change this constant if you have a veeeeery good reason; it has been specially tuned to this value on purpose --JAB (4/26/12)
     private val MessageCharLimit = 12000
 
     private val dataBuffer = new ListBuffer[String]()
 
-    def act() {
-      loop {
-        react {
-          case Write(data) => write(data)
-          case Read        => reply(flushBuffer())
-          case Finalize    => reply(flushBuffer()); exit("Mission complete")
-          case Abandon     => exit("Mission aborted")
-        }
-      }
+    override def receive = {
+      case Write(data) => write(data)
+      case Read        => sender ! flushBuffer()
+      case Finalize    => sender ! flushBuffer(); self ! PoisonPill
+      case Abandon     => self ! PoisonPill
     }
 
     private def write(data: String) {
@@ -173,16 +178,12 @@ class LogDirector(val mode: LogSendingMode, destinations: URL*) extends Actor {
   }
 
   // Essentially, a timer that reminds the Director to request buffer flushes from the LogBufferManager
-  private object LogFlushReminder extends Actor {
-    val FlushIntervalMs = 3000
-    def act() {
-      loop {
-        reactWithin(FlushIntervalMs) {
-          case TIMEOUT  => LogDirector.this ! Flush
-          case Finalize => exit("Flushing complete")
-          case Abandon  => exit("Flushing aborted")
-        }
-      }
+  private class LogFlushReminder extends Actor {
+    context.setReceiveTimeout(3.seconds)
+    override def receive = {
+      case ReceiveTimeout => director ! Flush
+      case Finalize       => self ! PoisonPill
+      case Abandon        => self ! PoisonPill
     }
   }
 

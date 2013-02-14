@@ -13,7 +13,7 @@ class HubNetClientEditor(workspace: GUIWorkspace,
                          iFactory: InterfaceFactory,
                          menuFactory: MenuBarFactory) extends JFrame
         with org.nlogo.window.Event.LinkChild
-        with org.nlogo.window.Events.ZoomedEvent.Handler {
+        with org.nlogo.window.Events.ZoomedEventHandler {
   val interfacePanel: AbstractWidgetPanel = iFactory.widgetPanel(workspace)
 
   locally {
@@ -23,7 +23,7 @@ class HubNetClientEditor(workspace: GUIWorkspace,
       ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
       ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER)
     import WidgetInfo._
-    val buttons = List(button, slider, switch, chooser, input, monitor, plot, note, view)
+    val buttons = List(button, slider, switch, chooser, input, monitor, note, view)
     getContentPane.add(iFactory.toolbar(interfacePanel, workspace, buttons, this), BorderLayout.NORTH)
     if (System.getProperty("os.name").startsWith("Mac")) {
       val menus = new JMenuBar() {add(menuFactory.createFileMenu())}
@@ -66,9 +66,9 @@ class HubNetClientEditor(workspace: GUIWorkspace,
     }
   }
 
-  def load(lines: Array[String], version:String) {
+  def load(lines: Seq[String], version:String) {
     interfacePanel.loadWidgets(lines, version)
-    setSize (getPreferredSize)
+    setSize(getPreferredSize)
   }
 
   def handle(e: org.nlogo.window.Events.ZoomedEvent) {setSize(getPreferredSize)}

@@ -4,10 +4,9 @@ package org.nlogo.lite
 
 import java.util.{ ArrayList, List => JList }
 import org.nlogo.agent.{ Observer, World, World3D }
-import org.nlogo.api.{ CompilerException, LogoException, ModelSection, ModelType, Version, SimpleJobOwner }
-import org.nlogo.window.{ Event, AppletAdPanel, CompilerManager, InterfacePanelLite, InvalidVersionException,
+import org.nlogo.api.{ LogoException, ModelSection, ModelType, Version, SimpleJobOwner }
+import org.nlogo.window.{ Event, Events, CompilerManager, InterfacePanelLite, InvalidVersionException,
                           ModelLoader, NetLogoListenerManager, RuntimeErrorDialog }
-import org.nlogo.window.Events.{ CompiledEvent, LoadSectionEvent }
 
 /**
  * The superclass of org.nlogo.lite.InterfaceComponent.  Also used by org.nlogo.lite.Applet.
@@ -44,7 +43,6 @@ with Event.LinkParent {
   val (iP: InterfacePanelLite,
        workspace: LiteWorkspace,
        procedures: ProceduresLite,
-       panel: AppletAdPanel,
        defaultOwner: SimpleJobOwner) = {
     val world = if(Version.is3D) new World3D() else new World
     val workspace = new LiteWorkspace(this, isApplet, world, frame, listenerManager)
@@ -53,13 +51,13 @@ with Event.LinkParent {
     val procedures = new ProceduresLite(workspace, workspace)
     addLinkComponent(procedures)
     addLinkComponent(new CompilerManager(workspace, procedures))
-    addLinkComponent(new CompiledEvent.Handler {
-      override def handle(e: CompiledEvent) {
+    addLinkComponent(new Events.CompiledEventHandler {
+      override def handle(e: Events.CompiledEvent) {
         if (e.error != null)
           e.error.printStackTrace()
       }})
-    addLinkComponent(new LoadSectionEvent.Handler {
-      override def handle(e: LoadSectionEvent) {
+    addLinkComponent(new Events.LoadSectionEventHandler {
+      override def handle(e: Events.LoadSectionEvent) {
         if (e.section == ModelSection.SystemDynamics)
           workspace.aggregateManager.load(e.text, workspace)
       }})
@@ -67,13 +65,11 @@ with Event.LinkParent {
       new InterfacePanelLite(workspace.viewWidget, workspace, workspace, workspace.plotManager,
                              new LiteEditorFactory(workspace))
     workspace.setWidgetContainer(iP)
-    val defaultOwner = new SimpleJobOwner("AppletPanel", workspace.world.mainRNG, classOf[Observer])
+    val defaultOwner = new SimpleJobOwner("AppletPanel", workspace.world.mainRNG)
     setBackground(java.awt.Color.WHITE)
     setLayout(new java.awt.BorderLayout)
     add(iP, java.awt.BorderLayout.CENTER)
-    val panel = new AppletAdPanel(iconListener)
-    add(panel, java.awt.BorderLayout.EAST)
-    (iP, workspace, procedures, panel, defaultOwner)
+    (iP, workspace, procedures, defaultOwner)
   }
 
   /** internal use only */
@@ -85,11 +81,6 @@ with Event.LinkParent {
   override def requestFocus() {
     if (iP != null)
       iP.requestFocus()
-  }
-
-  /** internal use only */
-  def setAdVisible(visible: Boolean) {
-    panel.setVisible(visible)
   }
 
   /**
@@ -131,7 +122,6 @@ with Event.LinkParent {
    * @throws IllegalStateException if called from the AWT event queue thread
    * @see #commandLater
    */
-  @throws(classOf[CompilerException])
   def command(source: String) {
     org.nlogo.awt.EventQueue.cantBeEventDispatchThread()
     workspace.evaluateCommands(defaultOwner, source)
@@ -147,7 +137,6 @@ with Event.LinkParent {
    *          if the code fails to compile
    * @see #command
    */
-  @throws(classOf[CompilerException])
   def commandLater(source: String) {
     workspace.evaluateCommands(defaultOwner, source, false)
   }
@@ -166,7 +155,6 @@ with Event.LinkParent {
    *                               if the code fails to compile
    * @throws IllegalStateException if called from the AWT event queue thread
    */
-  @throws(classOf[CompilerException])
   def report(source: String): AnyRef = {
     org.nlogo.awt.EventQueue.cantBeEventDispatchThread()
     workspace.evaluateReporter(defaultOwner, source)

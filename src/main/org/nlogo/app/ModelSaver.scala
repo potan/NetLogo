@@ -20,7 +20,7 @@ class ModelSaver(app: App) {
 
     // procedures
     section {
-      buf ++= app.tabs.proceduresTab.innerSource
+      buf ++= app.tabs.codeTab.innerSource
       if(buf.nonEmpty && buf.last != '\n')
         buf += '\n'
     }
@@ -39,14 +39,14 @@ class ModelSaver(app: App) {
     // turtle shapes
     section {
       for(shape <- app.tabs.workspace.world.turtleShapeList.getShapes.asScala) {
-        buf ++= shape.asInstanceOf[Shape].toString
+        buf ++= shape.toString
         buf ++= "\n\n"
       }
     }
 
     // version
     section {
-      buf ++= Version.version + "\n"
+      buf ++= Version.versionForSaving + "\n"
     }
 
     // preview commands
@@ -72,7 +72,7 @@ class ModelSaver(app: App) {
 
     // reserved for HubNet client
     section {
-      for(manager <- Option(app.tabs.workspace.hubnetManager))
+      for(manager <- Option(app.tabs.workspace.hubNetManager))
         manager.save(buf)
     }
 

@@ -10,7 +10,7 @@ public strictfp class WorldViewSettings2D
 
   WorldViewSettings2D(GUIWorkspace workspace, ViewWidget gw) {
     super(workspace, gw);
-    world = workspace.world;
+    world = workspace.world();
   }
 
   @Override
@@ -66,9 +66,9 @@ public strictfp class WorldViewSettings2D
            * This is because most hubnet clients will exhibit undefined
            * behavior because their turtle has died.
            */
-          new org.nlogo.window.Events.RemoveAllJobsEvent().raise(gWidget);
+          new Events.RemoveAllJobsEvent().raise(gWidget);
           if (hubnetDecision() == KICK /* kick clients first, then resize world */) {
-            workspace.hubnetManager().reset();
+            workspace.hubNetManager().reset();
           }
 
           world.clearTurtles();

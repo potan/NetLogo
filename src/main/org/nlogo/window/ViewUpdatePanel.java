@@ -3,11 +3,12 @@
 package org.nlogo.window;
 
 import org.nlogo.api.I18N;
+import org.nlogo.api.UpdateModeJ;
 
 public strictfp class ViewUpdatePanel
     extends javax.swing.JPanel
     implements
-    org.nlogo.window.Events.LoadEndEvent.Handler {
+    Events.LoadEndEventHandler {
   private final GUIWorkspace workspace;
 
   private final SpeedSliderPanel speedSlider;
@@ -110,7 +111,7 @@ public strictfp class ViewUpdatePanel
       addActionListener
           (new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent e) {
-              new org.nlogo.window.Events.EditWidgetEvent(settings)
+              new Events.EditWidgetEvent(settings)
                   .raise(SettingsButton.this);
             }
           });
@@ -120,23 +121,22 @@ public strictfp class ViewUpdatePanel
   /// methods for keeping menu in sync with reality
 
   private void refreshSelection() {
-    switch (workspace.updateMode()) {
-      case TICK_BASED:
-        viewUpdates.setSelectedIndex(0);
-        break;
-      case CONTINUOUS:
-        viewUpdates.setSelectedIndex(1);
-        break;
-      default:
-        throw new IllegalStateException();
+    if(workspace.updateMode() == UpdateModeJ.TICK_BASED()) {
+      viewUpdates.setSelectedIndex(0);
+    }
+    else if(workspace.updateMode() == UpdateModeJ.CONTINUOUS()) {
+      viewUpdates.setSelectedIndex(1);
+    }
+    else {
+      throw new IllegalStateException();
     }
   }
 
   private void setMode(String name) {
     if (name.equals(I18N.guiJ().get("tabs.run.viewUpdates.dropdown.onticks"))) {
-      workspace.updateMode(org.nlogo.nvm.Workspace.UpdateMode.TICK_BASED);
+      workspace.updateMode(UpdateModeJ.TICK_BASED());
     } else if (name.equals(I18N.guiJ().get("tabs.run.viewUpdates.dropdown.continuous"))) {
-      workspace.updateMode(org.nlogo.nvm.Workspace.UpdateMode.CONTINUOUS);
+      workspace.updateMode(UpdateModeJ.CONTINUOUS());
     } else {
       throw new IllegalStateException();
     }
@@ -144,7 +144,7 @@ public strictfp class ViewUpdatePanel
 
   ///
 
-  public void handle(org.nlogo.window.Events.LoadEndEvent e) {
+  public void handle(Events.LoadEndEvent e) {
     refreshSelection();
     speedSlider.setValue((int) workspace.speedSliderPosition());
   }

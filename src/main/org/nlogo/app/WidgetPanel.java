@@ -3,7 +3,6 @@
 package org.nlogo.app;
 
 import org.nlogo.api.I18N;
-import org.nlogo.window.DummyPlotWidget;
 import org.nlogo.window.EditorColorizer;
 import org.nlogo.window.GUIWorkspace;
 import org.nlogo.window.Widget;
@@ -25,10 +24,10 @@ public strictfp class WidgetPanel
     java.awt.event.MouseListener,
     java.awt.event.MouseMotionListener,
     java.awt.event.FocusListener,
-    org.nlogo.window.Events.WidgetEditedEvent.Handler,
-    org.nlogo.window.Events.WidgetRemovedEvent.Handler,
-    org.nlogo.window.Events.LoadBeginEvent.Handler,
-    org.nlogo.window.Events.ZoomedEvent.Handler {
+    org.nlogo.window.Events.WidgetEditedEventHandler,
+    org.nlogo.window.Events.WidgetRemovedEventHandler,
+    org.nlogo.window.Events.LoadBeginEventHandler,
+    org.nlogo.window.Events.ZoomedEventHandler {
   static final int GRID_SNAP = 5;  // set the size of the grid, in pixels
 
   protected java.awt.Rectangle selectionRect;
@@ -360,12 +359,6 @@ public strictfp class WidgetPanel
     menu.add(new WidgetCreationMenuItem(I18N.guiJ().get("tabs.run.widgets.chooser"), "CHOOSER", e.getX(), e.getY()));
     menu.add(new WidgetCreationMenuItem(I18N.guiJ().get("tabs.run.widgets.input"), "INPUT", e.getX(), e.getY()));
     menu.add(new WidgetCreationMenuItem(I18N.guiJ().get("tabs.run.widgets.monitor"), "MONITOR", e.getX(), e.getY()));
-    WidgetCreationMenuItem plot = new WidgetCreationMenuItem(I18N.guiJ().get("tabs.run.widgets.plot"), "PLOT", e.getX(), e.getY());
-    // if there are no plots in this model, then you can't have a plot in a hubnet client.
-    if (workspace.plotManager().plots().size() == 0) {
-      plot.setEnabled(false);
-    }
-    menu.add(plot);
     menu.add(new WidgetCreationMenuItem(I18N.guiJ().get("tabs.run.widgets.note"), "NOTE", e.getX(), e.getY()));
     menu.show(this, e.getX(), e.getY());
   }
@@ -416,18 +409,6 @@ public strictfp class WidgetPanel
           (new org.nlogo.nvm.DefaultCompilerServices(workspace.compiler()));
     } else if (type.equals("DUMMY BUTTON")) {
       return new org.nlogo.window.DummyButtonWidget();
-    } else if (type.equals("DUMMY PLOT")) {
-      // note that plots on the HubNet client must have the name of a plot
-      // on the server, thus, feed the dummy plot widget the names of
-      // the current plots so the user can select one. We override
-      // this method in InterfacePanel since regular plots are handled
-      // differently ev 1/25/07
-      String[] names = workspace.plotManager().getPlotNames();
-      if (names.length > 0) {
-        return DummyPlotWidget.apply(names[0], workspace.plotManager());
-      } else {
-        return DummyPlotWidget.apply("plot 1", workspace.plotManager());
-      }
     } else if (type.equals("DUMMY MONITOR")) {
       return new org.nlogo.window.DummyMonitorWidget();
     } else if (type.equals("DUMMY INPUT") ||  // in the GUI, it's "Input Box"
@@ -451,7 +432,7 @@ public strictfp class WidgetPanel
       // the entry in the model - ST 7/13/04, 3/14/06
       return null;
     } else if (type.equals("DUMMY GRAPHICS-WINDOW") || type.equals("DUMMY VIEW") || type.equals("VIEW")) {
-      view = new org.nlogo.window.DummyViewWidget(workspace.world);
+      view = new org.nlogo.window.DummyViewWidget(workspace.world());
       return view;
     } else {
       throw new IllegalStateException
@@ -643,13 +624,13 @@ public strictfp class WidgetPanel
 
   public void handle(org.nlogo.window.Events.ZoomedEvent e) {
     unselectWidgets();
-    zoomer.zoomWidgets(e.zoomFactor);
+    zoomer.zoomWidgets(e.zoomFactor());
     revalidate();
   }
 
   /// loading and saving
 
-  public Widget loadWidget(String[] strings, final String modelVersion) {
+  public Widget loadWidget(scala.collection.Seq<String> strings, final String modelVersion) {
     Widget.LoadHelper helper =
         new Widget.LoadHelper() {
           public String version() {
@@ -660,9 +641,9 @@ public strictfp class WidgetPanel
             return workspace.autoConvert(source, true, reporter, modelVersion);
           }
         };
-    String type = strings[0];
-    int x = Integer.parseInt(strings[1]);
-    int y = Integer.parseInt(strings[2]);
+    String type = strings.apply(0);
+    int x = Integer.parseInt(strings.apply(1));
+    int y = Integer.parseInt(strings.apply(2));
     Widget newGuy = makeWidget(type, true);
     if (newGuy != null) {
       newGuy.load(strings, helper);
@@ -674,7 +655,7 @@ public strictfp class WidgetPanel
 
   public void handle(org.nlogo.window.Events.WidgetEditedEvent e) {
     new org.nlogo.window.Events.DirtyEvent().raise(this);
-    zoomer.updateZoomInfo(e.widget);
+    zoomer.updateZoomInfo(e.widget());
   }
 
   public void handle(org.nlogo.window.Events.WidgetRemovedEvent e) {
@@ -682,16 +663,12 @@ public strictfp class WidgetPanel
     // plot widgets on the server remove the plot widget
     // on the client when the plot in the server is removed
     // ev 1/18/07
-    if (e.widget instanceof org.nlogo.window.PlotWidget) {
+    if (e.widget() instanceof org.nlogo.window.PlotWidget) {
       java.awt.Component[] comps = getComponents();
       for (int i = 0; i < comps.length; i++) {
         if (comps[i] instanceof WidgetWrapper) {
           WidgetWrapper wrapper = (WidgetWrapper) comps[i];
           Widget widget = wrapper.widget();
-          if (widget instanceof DummyPlotWidget &&
-              e.widget.displayName().equals(widget.displayName())) {
-            removeWidget(wrapper);
-          }
         }
       }
       repaint();
@@ -705,16 +682,14 @@ public strictfp class WidgetPanel
   }
 
   @Override
-  public void loadWidgets(String[] lines, String version) {
+  public void loadWidgets(scala.collection.Seq<String> lines, String version) {
     try {
-      List<List<String>> v =
+      scala.collection.Seq<scala.collection.Seq<String>> v =
           org.nlogo.api.ModelReader.parseWidgets(lines);
       if (null != v) {
         setVisible(false);
-        for (Iterator<List<String>> iter = v.iterator(); iter.hasNext();) {
-          List<String> v2 = iter.next();
-          String[] strings = v2.toArray(new String[v2.size()]);
-          loadWidget(strings, version);
+        for (scala.collection.Iterator<scala.collection.Seq<String>> iter = v.iterator(); iter.hasNext();) {
+          loadWidget(iter.next(), version);
         }
       }
     } finally {
@@ -874,5 +849,6 @@ public strictfp class WidgetPanel
 
     return true;
   }
+
 
 }

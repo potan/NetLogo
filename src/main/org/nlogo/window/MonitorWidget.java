@@ -3,6 +3,8 @@
 package org.nlogo.window;
 
 import org.nlogo.agent.Observer;
+import org.nlogo.api.AgentKind;
+import org.nlogo.api.AgentKindJ;
 import org.nlogo.api.Dump;
 import org.nlogo.api.Editable;
 import org.nlogo.api.I18N;
@@ -15,15 +17,10 @@ import java.util.List;
 public strictfp class MonitorWidget
     extends JobWidget
     implements Editable,
-    org.nlogo.window.Events.RuntimeErrorEvent.Handler,
-    org.nlogo.window.Events.PeriodicUpdateEvent.Handler,
-    org.nlogo.window.Events.JobRemovedEvent.Handler,
+    Events.RuntimeErrorEventHandler,
+    Events.PeriodicUpdateEventHandler,
+    Events.JobRemovedEventHandler,
     java.awt.event.MouseListener {
-
-  private static final int LEFT_MARGIN = 5;
-  private static final int RIGHT_MARGIN = 6;
-  private static final int BOTTOM_MARGIN = 6;
-  private static final int INSIDE_BOTTOM_MARGIN = 3;
 
   private boolean jobRunning = false;
   private boolean hasError = false;
@@ -92,8 +89,8 @@ public strictfp class MonitorWidget
   }
 
   @Override
-  public Class<Observer> agentClass() {
-    return org.nlogo.agent.Observer.class;
+  public AgentKind kind() {
+    return AgentKindJ.Observer();
   }
 
   @Override
@@ -108,7 +105,7 @@ public strictfp class MonitorWidget
     halt();
     if (procedure != null) {
       hasError = false;
-      new org.nlogo.window.Events.AddJobEvent(this, agents(), procedure())
+      new Events.AddJobEvent(this, agents(), procedure())
           .raise(this);
       jobRunning = true;
     }
@@ -123,9 +120,21 @@ public strictfp class MonitorWidget
 
   private String valueString = "";
 
+  public String valueString() {
+    return valueString;
+  }
+
   public void value(Object value) {
     this.value = value;
-    String newString = Dump.logoObject(value);
+    String newString;
+    if (value instanceof Double) {
+      newString = Dump.number(
+        org.nlogo.api.Approximate.approximate(
+          ((Double) value).doubleValue(), decimalPlaces));
+    }
+    else {
+      newString = Dump.logoObject(value);
+    }
     if (!newString.equals(valueString)) {
       valueString = newString;
       repaint();
@@ -196,24 +205,7 @@ public strictfp class MonitorWidget
   @Override
   public void paintComponent(java.awt.Graphics g) {
     super.paintComponent(g); // paint background
-    java.awt.FontMetrics fm = g.getFontMetrics();
-    int labelHeight = fm.getMaxDescent() + fm.getMaxAscent();
-    java.awt.Dimension d = getSize();
-    g.setColor(getForeground());
-    String displayName = displayName();
-    int boxHeight = (int) StrictMath.ceil(labelHeight * 1.4);
-    g.drawString(displayName, LEFT_MARGIN,
-        d.height - BOTTOM_MARGIN - boxHeight - fm.getMaxDescent() - 1);
-    g.setColor(java.awt.Color.WHITE);
-    g.fillRect(LEFT_MARGIN, d.height - BOTTOM_MARGIN - boxHeight,
-        d.width - LEFT_MARGIN - RIGHT_MARGIN - 1, boxHeight);
-    g.setColor(java.awt.Color.BLACK);
-    if (!valueString.equals("")) {
-      // int vWidth = fm.stringWidth( valueStr ) ;
-      g.drawString(valueString,
-          LEFT_MARGIN + 5,
-          d.height - BOTTOM_MARGIN - INSIDE_BOTTOM_MARGIN - fm.getMaxDescent());
-    }
+    MonitorPainter.paint(g, getSize(), getForeground(), displayName(), valueString);
   }
 
   private int decimalPlaces = 17;
@@ -235,13 +227,23 @@ public strictfp class MonitorWidget
     chooseDisplayName();
   }
 
+  // fragile -- depends on the details of what code wrapSource wraps
+  // the user's reporter and what the resulting compiled code looks
+  // like. model runs code calls this to grab the Reporter to run
+  // at tick time - ST 10/11/12
+  public scala.Option<org.nlogo.nvm.Reporter> reporter() {
+    org.nlogo.nvm.Procedure p = procedure();
+    return scala.Option.apply(
+      p == null ? null : p.code()[0].args[0]);
+  }
+
   public void wrapSource(String innerSource) {
     if (innerSource.trim().equals("")) {
       source(null, "", null);
       halt();
     } else {
-      source("to __monitor [] __observercode loop [ __updatemonitor __monitorprecision (",
-          innerSource, "\n) " + decimalPlaces() + " ] end");
+      source("to __monitor [] __observercode loop [ __updatemonitor (",
+             innerSource, "\n)] end");
     }
     chooseDisplayName();
   }
@@ -250,31 +252,31 @@ public strictfp class MonitorWidget
     return innerSource();
   }
 
-  public void handle(org.nlogo.window.Events.RuntimeErrorEvent e) {
-    if (this == e.jobOwner) {
+  public void handle(Events.RuntimeErrorEvent e) {
+    if (this == e.jobOwner()) {
       hasError = true;
       halt();
     }
   }
 
-  public void handle(org.nlogo.window.Events.PeriodicUpdateEvent e) {
+  public void handle(Events.PeriodicUpdateEvent e) {
     if (!jobRunning && procedure() != null) {
       hasError = false;
       jobRunning = true;
-      new org.nlogo.window.Events.AddJobEvent(this, agents(), procedure())
+      new Events.AddJobEvent(this, agents(), procedure())
           .raise(this);
     }
   }
 
-  public void handle(org.nlogo.window.Events.JobRemovedEvent e) {
-    if (e.owner == this) {
+  public void handle(Events.JobRemovedEvent e) {
+    if (e.owner() == this) {
       jobRunning = false;
       value(hasError ? "N/A" : "");
     }
   }
 
   private void halt() {
-    new org.nlogo.window.Events.RemoveJobEvent(this).raise(this);
+    new Events.RemoveJobEvent(this).raise(this);
   }
 
   @Override
@@ -304,28 +306,28 @@ public strictfp class MonitorWidget
   }
 
   @Override
-  public Object load(String[] strings, Widget.LoadHelper helper) {
-    String displayName = strings[5];
-    String source = ModelReader.restoreLines(strings[6]);
+  public Object load(scala.collection.Seq<String> strings, Widget.LoadHelper helper) {
+    String displayName = strings.apply(5);
+    String source = ModelReader.restoreLines(strings.apply(6));
 
     if (displayName.equals("NIL")) {
       name("");
     } else {
       name(displayName);
     }
-    if (strings.length > 7) {
-      decimalPlaces = Integer.parseInt(strings[7]);
+    if (strings.size() > 7) {
+      decimalPlaces = Integer.parseInt(strings.apply(7));
     }
-    if (strings.length > 9) {
-      fontSize(Integer.parseInt(strings[9]));
+    if (strings.size() > 9) {
+      fontSize(Integer.parseInt(strings.apply(9)));
     }
     if (!source.equals("NIL")) {
       wrapSource(helper.convert(source, true));
     }
-    int x1 = Integer.parseInt(strings[1]);
-    int y1 = Integer.parseInt(strings[2]);
-    int x2 = Integer.parseInt(strings[3]);
-    int y2 = Integer.parseInt(strings[4]);
+    int x1 = Integer.parseInt(strings.apply(1));
+    int y1 = Integer.parseInt(strings.apply(2));
+    int x2 = Integer.parseInt(strings.apply(3));
+    int y2 = Integer.parseInt(strings.apply(4));
     setSize(x2 - x1, y2 - y1);
     chooseDisplayName();
     return this;
@@ -338,7 +340,7 @@ public strictfp class MonitorWidget
 
   public void mouseClicked(MouseEvent e) {
     if (!e.isPopupTrigger() && error() != null && !lastMousePressedWasPopupTrigger) {
-      new org.nlogo.window.Events.EditWidgetEvent(this).raise(this);
+      new Events.EditWidgetEvent(this).raise(this);
       return;
     }
   }

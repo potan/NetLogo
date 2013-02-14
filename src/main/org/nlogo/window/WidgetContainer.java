@@ -15,5 +15,7 @@ public interface WidgetContainer {
 
   boolean isZoomed();
 
-  Widget loadWidget(String[] strings, String modelVersion);
+  Widget loadWidget(scala.collection.Seq<String> strings, String modelVersion);
+
+  public java.util.List<Widget> getWidgetsForSaving(); // Added by NP 2012-09-13 so ReviewTab can access it
 }

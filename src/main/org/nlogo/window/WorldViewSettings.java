@@ -6,7 +6,7 @@ import org.nlogo.api.CompilerException;
 import org.nlogo.api.Editable;
 import org.nlogo.api.I18N;
 import org.nlogo.api.Property;
-import org.nlogo.nvm.Workspace;
+import org.nlogo.api.UpdateMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -207,15 +207,15 @@ public abstract strictfp class WorldViewSettings
     }
   }
 
-  public Object load(String[] strings, String version) {
+  public Object load(scala.collection.Seq<String> strings, String version) {
     workspace.loadWorld(strings, version, this);
     // we can't clearAll here because the globals may not
     // be allocated yet ev 7/12/06
     // note that we clear turtles inside the load method so
     // it can happen before we set the topology ev 7/19/06
-    workspace.world.tickCounter.clear();
-    workspace.world.clearPatches();
-    workspace.world.displayOn(true);
+    workspace.world().tickCounter.clear();
+    workspace.world().clearPatches();
+    workspace.world().displayOn(true);
     return this;
   }
 
@@ -279,7 +279,7 @@ public abstract strictfp class WorldViewSettings
   public void minPxcor(int minPxcor) {
     if (minPxcor <= 0) {
       newMinX = minPxcor;
-      edgesChanged = edgesChanged || (newMinX != workspace.world.minPxcor());
+      edgesChanged = edgesChanged || (newMinX != workspace.world().minPxcor());
     }
   }
 
@@ -290,7 +290,7 @@ public abstract strictfp class WorldViewSettings
   public void maxPxcor(int maxPxcor) {
     if (maxPxcor >= 0) {
       newMaxX = maxPxcor;
-      edgesChanged = edgesChanged || (newMaxX != workspace.world.maxPxcor());
+      edgesChanged = edgesChanged || (newMaxX != workspace.world().maxPxcor());
     }
   }
 
@@ -301,7 +301,7 @@ public abstract strictfp class WorldViewSettings
   public void minPycor(int minPycor) {
     if (minPycor <= 0) {
       newMinY = minPycor;
-      edgesChanged = edgesChanged || (newMinY != workspace.world.minPycor());
+      edgesChanged = edgesChanged || (newMinY != workspace.world().minPycor());
     }
   }
 
@@ -312,7 +312,7 @@ public abstract strictfp class WorldViewSettings
   public void maxPycor(int maxPycor) {
     if (maxPycor >= 0) {
       newMaxY = maxPycor;
-      edgesChanged = edgesChanged || (newMaxY != workspace.world.maxPycor());
+      edgesChanged = edgesChanged || (newMaxY != workspace.world().maxPycor());
     }
   }
 
@@ -326,20 +326,20 @@ public abstract strictfp class WorldViewSettings
   }
 
   public double patchSize() {
-    return workspace.world.patchSize();
+    return workspace.world().patchSize();
   }
 
-  public Workspace.UpdateMode updateMode() {
+  public UpdateMode updateMode() {
     return workspace.updateMode();
   }
 
-  public void updateMode(Workspace.UpdateMode updateMode) {
+  public void updateMode(UpdateMode updateMode) {
     workspace.updateMode(updateMode);
   }
 
   public boolean wrappingX() {
     if (!wrappingChanged) {
-      newWrapX = workspace.world.wrappingAllowedInX();
+      newWrapX = workspace.world().wrappingAllowedInX();
     }
 
     return newWrapX;
@@ -347,12 +347,12 @@ public abstract strictfp class WorldViewSettings
 
   public void wrappingX(boolean value) {
     newWrapX = value;
-    wrappingChanged = wrappingChanged || (newWrapX != workspace.world.wrappingAllowedInX());
+    wrappingChanged = wrappingChanged || (newWrapX != workspace.world().wrappingAllowedInX());
   }
 
   public boolean wrappingY() {
     if (!wrappingChanged) {
-      newWrapY = workspace.world.wrappingAllowedInY();
+      newWrapY = workspace.world().wrappingAllowedInY();
     }
 
     return newWrapY;
@@ -360,7 +360,7 @@ public abstract strictfp class WorldViewSettings
 
   public void wrappingY(boolean value) {
     newWrapY = value;
-    wrappingChanged = wrappingChanged || (newWrapY != workspace.world.wrappingAllowedInY());
+    wrappingChanged = wrappingChanged || (newWrapY != workspace.world().wrappingAllowedInY());
   }
 
   protected int newFontSize;
@@ -407,7 +407,7 @@ public abstract strictfp class WorldViewSettings
   }
 
   public void clearTurtles() {
-    workspace.world.clearTurtles();
+    workspace.world().clearTurtles();
   }
 
   protected CompilerException error = null;
@@ -461,7 +461,7 @@ public abstract strictfp class WorldViewSettings
   }
 
   public void setDimensions(org.nlogo.api.WorldDimensions d, double patchSize) {
-    workspace.world.patchSize(patchSize);
+    workspace.world().patchSize(patchSize);
     setDimensions(d);
     patchSize(patchSize);
     gWidget.resetSize();
@@ -477,12 +477,12 @@ public abstract strictfp class WorldViewSettings
     newMaxX = maxPxcor;
     newMinY = minPycor;
     newMaxY = maxPycor;
-    if (minPxcor != workspace.world.minPxcor() ||
-        maxPxcor != workspace.world.maxPxcor() ||
-        minPycor != workspace.world.minPycor() ||
-        maxPycor != workspace.world.maxPycor()) {
+    if (minPxcor != workspace.world().minPxcor() ||
+        maxPxcor != workspace.world().maxPxcor() ||
+        minPycor != workspace.world().minPycor() ||
+        maxPycor != workspace.world().maxPycor()) {
       prepareForWorldResize();
-      workspace.world.createPatches(minPxcor, maxPxcor,
+      workspace.world().createPatches(minPxcor, maxPxcor,
           minPycor, maxPycor);
       finishWorldResize();
     }
@@ -490,8 +490,8 @@ public abstract strictfp class WorldViewSettings
 
   void prepareForWorldResize() {
     workspace.jobManager.haltNonObserverJobs();
-    workspace.world.clearTurtles();
-    workspace.world.clearLinks();
+    workspace.world().clearTurtles();
+    workspace.world().clearLinks();
   }
 
   void finishWorldResize() {

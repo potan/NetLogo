@@ -1,7 +1,0 @@
-NetLogo 5.0.3
-October 25, 2012
-NetLogo 5.0
-NetLogo 4.
-NetLogo 3.
-NetLogo 2.
-NetLogo 1.

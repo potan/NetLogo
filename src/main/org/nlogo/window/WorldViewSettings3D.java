@@ -11,7 +11,7 @@ public strictfp class WorldViewSettings3D
 
   WorldViewSettings3D(GUIWorkspace workspace, ViewWidget gw) {
     super(workspace, gw);
-    world = (World3D) workspace.world;
+    world = (World3D) workspace.world();
   }
 
   protected int newMinZ;
@@ -277,7 +277,7 @@ public strictfp class WorldViewSettings3D
         new Runnable() {
           public void run() {
             if (edgesChanged) {
-              new org.nlogo.window.Events.RemoveAllJobsEvent().raise(gWidget);
+              new Events.RemoveAllJobsEvent().raise(gWidget);
               world.clearTurtles();
               world.clearLinks();
               world.createPatches(newMinX, newMaxX,

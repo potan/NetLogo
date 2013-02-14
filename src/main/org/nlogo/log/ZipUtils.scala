@@ -32,11 +32,11 @@ object ZipUtils {
         buffer.append(in.read().toByte)
 
       in.close()
-      Some(buffer.map(_.toChar).mkString.reverse dropWhile (_.toByte < 0) reverse) // Make string and trim off any nonsense at end
+      Some(buffer.map(_.toChar).mkString.reverse.dropWhile(_.toByte < 0).reverse) // Make string and trim off any nonsense at end
 
     }
     catch {
-      case _ => None
+      case _: Exception => None
     }
   }
 

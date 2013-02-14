@@ -19,7 +19,7 @@ public abstract strictfp class Chooser
   // global is always one of them.  We use it to track our current
   // index too (the selected value in the chooser). -- CLB
   ChooserConstraint constraint = new ChooserConstraint(
-      ChooserConstraint.init$default$1(), ChooserConstraint.init$default$2());
+    LogoList.Empty(), 0);
 
   // sub-elements of Switch
   private final ChooserClickControl control = new ChooserClickControl();
@@ -79,7 +79,7 @@ public abstract strictfp class Chooser
   @Override
   public void updateConstraints() {
     if (name().length() > 0) {
-      new org.nlogo.window.Events.AddChooserConstraintEvent(name, constraint)
+      new Events.AddChooserConstraintEvent(name, constraint)
           .raise(this);
     }
   }

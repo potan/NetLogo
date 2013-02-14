@@ -3,7 +3,8 @@
 package org.nlogo.app
 
 import org.nlogo.agent.{Agent, World3D, World}
-import org.nlogo.api.{LogoException, I18N, APIVersion, CompilerException, ModelType, RendererInterface, Shape, Version, Observer, SimpleJobOwner, HubNetInterface, AggregateManagerInterface, FileIO, ModelSection, ModelReader}
+import org.nlogo.api
+import api._
 import org.nlogo.awt.UserCancelException
 import org.nlogo.log.{Logger, LogSendingMode, WebStartXMLWriterAppender}
 import org.nlogo.nvm.{CompilerInterface, Workspace, WorkspaceFactory}
@@ -11,8 +12,8 @@ import org.nlogo.shape.{ShapesManagerInterface, ShapeChangeListener, LinkShapesM
 import org.nlogo.swing.Implicits.thunk2runnable
 import org.nlogo.swing.OptionDialog
 import org.nlogo.util.{WebStartUtils, Pico}
-import org.nlogo.window.{ButtonWidget, RuntimeErrorDialog, AppEventType, GLViewManagerInterface, CompilerManager, EditorColorizer, UpdateManager, EditDialogFactoryInterface, WidgetInfo, AbstractWidgetPanel, InterfaceFactory, NetLogoListenerManager, LabManagerInterface, ColorDialog, GUIWorkspace}
-import org.nlogo.window.Events.{CompileAllEvent, LoadBeginEvent, LoadEndEvent, ZoomedEvent, AppEvent, IconifiedEvent, LoadSectionEvent, AboutToQuitEvent, BeforeLoadEvent, ModelSavedEvent}
+import org.nlogo.window._
+import org.nlogo.window.Events._
 import org.nlogo.workspace.{AbstractWorkspace, Controllable}
 import org.nlogo.window.Event.LinkParent
 
@@ -79,7 +80,7 @@ object App{
    *             is not currently documented.)
    */
   def main(args:Array[String]){
-    // on Mac OS X 10.5, we have to explicitly ask for the Quartz
+    // since Mac OS X 10.5, we have to explicitly ask for the Quartz
     // renderer. perhaps we should eventually switch to the Sun
     // renderer since that's the new default, but for now, the
     // Quartz renderer is what we've long used and tested, so
@@ -106,8 +107,6 @@ object App{
     processCommandLineArguments(args)
     Splash.beginSplash() // also initializes AWT
     pico.addScalaObject("org.nlogo.compiler.Compiler")
-    pico.addComponent(classOf[AppletSaver])
-    pico.addComponent(classOf[ProceduresToHtml])
     pico.addComponent(classOf[App])
     pico.as(org.picocontainer.Characteristics.NO_CACHE).addComponent(classOf[FileMenu])
     pico.addComponent(classOf[ModelSaver])
@@ -160,6 +159,19 @@ object App{
     }
     pico.addComponent(classOf[WorkspaceFactory], factory)
     pico.addComponent(classOf[Tabs])
+    pico.add(
+      classOf[org.nlogo.window.ReviewTabInterface],
+      "org.nlogo.review.ReviewTab",
+      Array[Parameter](
+        new ComponentParameter(),
+        // saveModel
+        new ConstantParameter(
+          () => new ModelSaver(pico.getComponent(classOf[App])).save),
+        new ConstantParameter(
+          () => pico.getComponent(classOf[App]).fileMenu.offerSave()),
+        new ConstantParameter(
+          () => pico.getComponent(classOf[App]).tabs.setSelectedComponent(
+            pico.getComponent(classOf[App]).tabs.reviewTab))))
     pico.addComponent(classOf[AgentMonitorManager])
     app = pico.getComponent(classOf[App])
     // It's pretty silly, but in order for the splash screen to show up
@@ -269,25 +281,25 @@ object App{
   // TODO: lots of duplication here...
   private class ShapeSectionReader(section: ModelSection) extends org.nlogo.shape.ModelSectionReader {
     @throws(classOf[java.io.IOException])
-    def read(path: String) = {
+    def read(path: String): Array[String] = {
       val map = ModelReader.parseModel(FileIO.file2String(path))
       if (map == null ||
-              map.get(ModelSection.Version) == null ||
-              map.get(ModelSection.Version).length == 0 ||
-              !ModelReader.parseVersion(map).startsWith("NetLogo")) {
+          !map.isDefinedAt(ModelSection.Version) ||
+          map(ModelSection.Version).isEmpty ||
+          !ModelReader.parseVersion(map).startsWith("NetLogo")) {
         // not a valid model file
-        Array.empty[String]
+        Array()
       }
-      else map.get(section)
+      else map(section).toArray
     }
 
     @throws(classOf[java.io.IOException])
     override def getVersion(path:String) = {
       val map = ModelReader.parseModel(FileIO.file2String(path))
       if (map == null ||
-              map.get(ModelSection.Version) == null ||
-              map.get(ModelSection.Version).length == 0 ||
-              !ModelReader.parseVersion(map).startsWith("NetLogo")) {
+          !map.isDefinedAt(ModelSection.Version) ||
+          map(ModelSection.Version).isEmpty ||
+          !ModelReader.parseVersion(map).startsWith("NetLogo")) {
         // not a valid model file
         null;
       }
@@ -300,14 +312,10 @@ class App extends
     org.nlogo.window.Event.LinkChild with
     org.nlogo.util.Exceptions.Handler with
     org.nlogo.window.ExternalFileManager with
-    AppEvent.Handler with
-    BeforeLoadEvent.Handler with
-    LoadBeginEvent.Handler with
-    LoadSectionEvent.Handler with
-    LoadEndEvent.Handler with
-    ModelSavedEvent.Handler with
-    Events.SwitchedTabsEvent.Handler with
-    AboutToQuitEvent.Handler with
+    Events.ChangeLanguageEventHandler with
+    Events.MagicOpenEventHandler with
+    Events.ReloadEventHandler with
+    Events.SwitchedTabsEventHandler with
     Controllable {
 
   import App.{pico, logger, commandLineMagic, commandLineModel, commandLineURL, commandLineModelIsLaunch,
@@ -318,7 +326,7 @@ class App extends
   // all these guys get set in the locally block
   private var _workspace: GUIWorkspace = null
   def workspace = _workspace
-  lazy val owner = new SimpleJobOwner("App", workspace.world.mainRNG, classOf[Observer])
+  lazy val owner = new SimpleJobOwner("App", workspace.world.mainRNG)
   private var _tabs: Tabs = null
   def tabs = _tabs
   var dirtyMonitor:DirtyMonitor = null // accessed from FileMenu - ST 2/26/04
@@ -352,15 +360,9 @@ class App extends
 
     val interfaceFactory = new InterfaceFactory() {
       def widgetPanel(workspace: GUIWorkspace): AbstractWidgetPanel = new WidgetPanel(workspace)
-      def toolbar(wp: AbstractWidgetPanel, workspace: GUIWorkspace, buttons: List[WidgetInfo], frame: Frame) = {
+      def toolbar(wp: AbstractWidgetPanel, workspace: GUIWorkspace, buttons: List[WidgetInfo], frame: Frame) =
         new InterfaceToolBar(wp.asInstanceOf[WidgetPanel], workspace, buttons, frame,
-          pico.getComponent(classOf[EditDialogFactoryInterface])) {
-          override def addControls() {
-            super.addControls()
-            add(new JButton(fileMenu.saveClientAppletAction()))
-          }
-        }
-      }
+          pico.getComponent(classOf[EditDialogFactoryInterface]))
     }
     pico.addComponent(interfaceFactory)
 
@@ -372,7 +374,7 @@ class App extends
 
     val world = if(Version.is3D) new World3D() else new World()
     pico.addComponent(world)
-    _workspace = new GUIWorkspace(world, GUIWorkspace.KioskLevel.NONE,
+    _workspace = new GUIWorkspace(world, GUIWorkspaceJ.KioskLevel.NONE,
                                   frame, frame, hubNetManagerFactory, App.this, listenerManager) {
       val compiler = pico.getComponent(classOf[CompilerInterface])
       // lazy to avoid initialization order snafu - ST 3/1/11
@@ -382,12 +384,19 @@ class App extends
         override def updateMode = _workspace.updateMode()
       }
       def aggregateManager: AggregateManagerInterface = App.this.aggregateManager
-      def inspectAgent(agent: org.nlogo.api.Agent, radius: Double) {
-        val a = agent.asInstanceOf[org.nlogo.agent.Agent]
-        monitorManager.inspect(a.getAgentClass, a, radius)
+      def inspectAgent(agent: Agent, radius: Double) {
+        org.nlogo.awt.EventQueue.invokeLater(
+          new Runnable {
+            override def run() {
+              monitorManager.inspect(agent.kind, agent, radius)
+            }})
       }
-      override def inspectAgent(agentClass: Class[_ <: Agent], agent: Agent, radius: Double) {
-        monitorManager.inspect(agentClass, agent, radius)
+      override def inspectAgent(kind: AgentKind, agent: Agent, radius: Double) {
+        org.nlogo.awt.EventQueue.invokeLater(
+          new Runnable {
+            override def run() {
+              monitorManager.inspect(kind, agent, radius)
+            }})
       }
       override def closeAgentMonitors() { monitorManager.closeAll() }
       override def newRenderer: RendererInterface = {
@@ -424,7 +433,7 @@ class App extends
     pico.addComponent(tabs.interfaceTab.getInterfacePanel)
     frame.getContentPane.add(tabs, java.awt.BorderLayout.CENTER)
 
-    frame.addLinkComponent(new CompilerManager(workspace, tabs.proceduresTab))
+    frame.addLinkComponent(new CompilerManager(workspace, tabs.codeTab))
     frame.addLinkComponent(listenerManager)
 
     org.nlogo.util.Exceptions.setHandler(this)
@@ -482,7 +491,7 @@ class App extends
 
     if(! System.getProperty("os.name").startsWith("Mac")){ org.nlogo.awt.Positioning.center(frame, null) }
 
-    org.nlogo.app.FindDialog.init(frame)
+    FindDialog.init(frame)
 
     Splash.endSplash()
     frame.setVisible(true)
@@ -585,11 +594,12 @@ class App extends
       else libraryOpen(commandLineModel) // --open from command line
     }
     else if (commandLineMagic != null)
-      workspace.magicOpen(commandLineMagic)
+      new Events.MagicOpenEvent(commandLineMagic)
+        .raise(this)
     else if (commandLineURL != null) {
       fileMenu.openFromSource(
         org.nlogo.util.Utils.url2String(commandLineURL),
-        java.net.URLDecoder.decode(commandLineURL.reverse takeWhile (_ != '/') reverse, "UTF-8"), "Starting...", ModelType.Library)
+        java.net.URLDecoder.decode(commandLineURL.reverse.takeWhile(_ != '/').reverse, "UTF-8"), "Starting...", ModelType.Library)
       Option(System.getProperty(ImportWorldURLProp)) foreach {
         url => // `io.Source.fromURL(url).bufferedReader` steps up to bat and... manages to fail gloriously here! --JAB (8/22/12)
           import java.io.{ BufferedReader, InputStreamReader }, java.net.URL
@@ -615,56 +625,19 @@ class App extends
     smartPack(frame.getPreferredSize)
   }
 
-  // AppEvent stuff (kludgy)
-  /**
-   * Internal use only.
-   */
-  def handle(e:AppEvent){
-    import AppEventType._
-    e.`type` match {
-      case RELOAD => reload()
-      case MAGIC_OPEN => magicOpen(e.args(0).toString)
-      case START_LOGGING =>
-        startLogging(e.args(0).toString)
-        if(logger!=null)
-          logger.modelOpened(workspace.getModelPath)
-      case ZIP_LOG_FILES =>
+  /// more event handlers
 
-        if (logger==null)
-          org.nlogo.log.Files.zipSessionFiles(System.getProperty("java.io.tmpdir"), e.args(0).toString)
-        else
-          logger.zipSessionFiles(e.args(0).toString)
-
-        if (isWebStart)
-          JOptionPane.showConfirmDialog(null,
-                                        "Your local log files have been zipped, but this action has no affect on remotely-stored log files.",
-                                        "NetLogo",
-                                        JOptionPane.DEFAULT_OPTION)
-
-      case DELETE_LOG_FILES =>
-        if(logger==null)
-          org.nlogo.log.Files.deleteSessionFiles(System.getProperty("java.io.tmpdir"))
-        else {
-          logger.deleteSessionFiles()
-          if (isWebStart)
-            JOptionPane.showConfirmDialog(null,
-                                          "Your local log files have been deleted, but this action has no affect on remotely-stored log files.",
-                                          "NetLogo",
-                                          JOptionPane.DEFAULT_OPTION)
-        }
-      case CHANGE_LANGUAGE => changeLanguage()
-      case _ =>
-    }
-  }
-
-  private def reload() {
+  def handle(e: Events.ReloadEvent) {
     val modelType = workspace.getModelType
     val path = workspace.getModelPath
-    if (modelType != ModelType.New && path != null) openFromSource(FileIO.file2String(path), path, modelType)
-    else commandLater("print \"can't, new model\"")
+    if (modelType != ModelType.New && path != null)
+      openFromSource(FileIO.file2String(path), path, modelType)
+    else
+      commandLater("print \"can't, new model\"")
   }
 
-  private def magicOpen(name: String) {
+  def handle(e: Events.MagicOpenEvent) {
+    import e.name
     import collection.JavaConverters._
     val matches = org.nlogo.workspace.ModelsLibrary.findModelsBySubstring(name).asScala
     if (matches.isEmpty) commandLater("print \"no models matching \\\"" + name + "\\\" found\"")
@@ -683,7 +656,7 @@ class App extends
     }
   }
 
-  def changeLanguage() {
+  def handle(e: Events.ChangeLanguageEvent) {
     val locales = I18N.availableLocales
     val languages = locales.map{l => l.getDisplayName(l) }
     val index = org.nlogo.swing.OptionDialog.showAsList(frame,
@@ -696,6 +669,45 @@ class App extends
     }
     val restart = "Langauge changed.\nYou must restart NetLogo for the changes to take effect."
     org.nlogo.swing.OptionDialog.show(frame, "Change Language", restart, Array(I18N.gui.get("common.buttons.ok")))
+  }
+
+  /**
+   * Internal use only.
+   */
+  def handle(e: LoggingEvent) {
+    import LoggingEventType._
+    e.eventType match {
+      case START_LOGGING =>
+        startLogging(e.name)
+        if (logger != null)
+          logger.modelOpened(workspace.getModelPath)
+      case ZIP_LOG_FILES =>
+
+        if (logger == null)
+          org.nlogo.log.Files.zipSessionFiles(
+            System.getProperty("java.io.tmpdir"), e.name)
+        else
+          logger.zipSessionFiles(e.name)
+
+        if (isWebStart)
+          JOptionPane.showConfirmDialog(null,
+                                        "Your local log files have been zipped, but this action has no affect on remotely-stored log files.",
+                                        "NetLogo",
+                                        JOptionPane.DEFAULT_OPTION)
+      case DELETE_LOG_FILES =>
+        if (logger == null)
+          org.nlogo.log.Files.deleteSessionFiles(
+            System.getProperty("java.io.tmpdir"))
+        else {
+          logger.deleteSessionFiles()
+          if (isWebStart)
+            JOptionPane.showConfirmDialog(null,
+                                          "Your local log files have been deleted, but this action has no affect on remotely-stored log files.",
+                                          "NetLogo",
+                                          JOptionPane.DEFAULT_OPTION)
+        }
+      case _ =>
+    }
   }
 
   ///
@@ -716,8 +728,8 @@ class App extends
     org.nlogo.window.RuntimeErrorDialog.setModelName(workspace.modelNameForDisplay)
     if (AbstractWorkspace.isApp) {
       frame.setTitle(makeFrameTitle)
-      if (workspace.hubnetManager() != null) {
-        workspace.hubnetManager().setTitle(workspace.modelNameForDisplay,
+      if (workspace.hubNetManager != null) {
+        workspace.hubNetManager.setTitle(workspace.modelNameForDisplay,
           workspace.getModelDir, workspace.getModelType)
       }
     }
@@ -730,7 +742,8 @@ class App extends
     val modelName = workspace.modelNameForDisplay
     RuntimeErrorDialog.setModelName(modelName)
     if(AbstractWorkspace.isApp) frame.setTitle(makeFrameTitle)
-    if(workspace.hubnetManager() != null) workspace.hubnetManager().closeClientEditor()
+    if(workspace.hubNetManager != null)
+      workspace.hubNetManager.closeClientEditor()
   }
 
   private var wasAtPreferredSizeBeforeLoadBegan = false
@@ -812,7 +825,8 @@ class App extends
       dialog.pack()
       dialog.setLocationRelativeTo(frame)
 
-      concurrent.ops.spawn {
+      import scala.concurrent.{ ExecutionContext, Future, future }, ExecutionContext.Implicits.global
+      val f: Future[Unit] = future {
         logger.close()                                      // Background task: Avoids blocking the progress bar
         SwingUtilities.invokeLater(() => dialog.dispose())  // Event thread:    Have to somehow tell `dialog` that we no longer need it!
       }
@@ -861,7 +875,8 @@ class App extends
       else title = "NetLogo " + (8212.toChar) + " " + title
 
       // OS X UI guidelines prohibit paths in title bars, but oh well...
-      if (workspace.getModelType == ModelType.Normal) title += " {" + workspace.getModelDir + "}"
+      if (workspace.getModelType == ModelType.Normal)
+        title += " {" + workspace.getModelDir + "}"
       title
     }
   }
@@ -948,7 +963,6 @@ class App extends
    * @throws IllegalStateException if called from the AWT event queue thread
    * @see #commandLater
    */
-  @throws(classOf[CompilerException])
   def command(source: String) {
     org.nlogo.awt.EventQueue.cantBeEventDispatchThread()
     workspace.evaluateCommands(owner, source)
@@ -962,7 +976,6 @@ class App extends
    * @throws org.nlogo.api.CompilerException if the code fails to compile
    * @see #command
    */
-  @throws(classOf[CompilerException])
   def commandLater(source: String){
     workspace.evaluateCommands(owner, source, false)
   }
@@ -979,7 +992,6 @@ class App extends
    * @throws org.nlogo.api.CompilerException if the code fails to compile
    * @throws IllegalStateException if called from the AWT event queue thread
    */
-  @throws(classOf[CompilerException])
   def report(source: String): Object = {
     org.nlogo.awt.EventQueue.cantBeEventDispatchThread()
     workspace.evaluateReporter(owner, source, workspace.world.observer())
@@ -989,7 +1001,7 @@ class App extends
    * Returns the contents of the Code tab.
    * @return contents of Code tab
    */
-  def getProcedures: String = dispatchThreadOrBust(tabs.proceduresTab.innerSource)
+  def getProcedures: String = dispatchThreadOrBust(tabs.codeTab.innerSource)
 
   /**
    * Replaces the contents of the Code tab.
@@ -997,7 +1009,7 @@ class App extends
    * @param source new contents
    * @see #compile
    */
-  def setProcedures(source:String) { dispatchThreadOrBust(tabs.proceduresTab.innerSource(source)) }
+  def setProcedures(source:String) { dispatchThreadOrBust(tabs.codeTab.innerSource(source)) }
 
   /**
    * Recompiles the model.  Useful after calling
@@ -1050,8 +1062,10 @@ class App extends
    * in the same (undocumented) format found in a saved model.
    * @param text the widget specification
    */
-  def makeWidget(text:String){
-    dispatchThreadOrBust( tabs.interfaceTab.getInterfacePanel.loadWidget(text.split("\n").toArray, Version.version) )
+  def makeWidget(text: String){
+    dispatchThreadOrBust(
+      tabs.interfaceTab.getInterfacePanel.loadWidget(
+        text.split("\n").toSeq, Version.version) )
   }
 
   /// helpers for controlling methods

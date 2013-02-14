@@ -5,8 +5,6 @@ package org.nlogo.app
 import com.tristanhunt.knockoff.DefaultDiscounter._
 import java.io.InputStream
 
-// This gets tested by TestAppletSaver and TestInfoFormatter. - ST 9/7/10
-
 object InfoFormatter {
 
   type MarkDownString = String

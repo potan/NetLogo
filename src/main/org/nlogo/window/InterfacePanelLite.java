@@ -10,6 +10,7 @@ import org.nlogo.api.Version;
 import org.nlogo.api.VersionHistory;
 
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,8 @@ public strictfp class InterfacePanelLite
     implements
     WidgetContainer,
     java.awt.event.FocusListener,
-    org.nlogo.window.Events.LoadSectionEvent.Handler,
-    org.nlogo.window.Events.OutputEvent.Handler {
+    Events.LoadSectionEventHandler,
+    Events.OutputEventHandler {
 
   private final Map<String, Widget> widgets; // widget name -> Widget
   private final ViewWidgetInterface viewWidget;
@@ -72,12 +73,11 @@ public strictfp class InterfacePanelLite
     addWidget((Widget) viewWidget, 0, 0);
   }
 
-  // made protected so that hubnet could override it to implement message throttling. -JC 8/19/10
-  protected java.awt.event.KeyAdapter getKeyAdapter() {
+  public java.awt.event.KeyAdapter getKeyAdapter() {
     return new ButtonKeyAdapter();
   }
 
-  protected class ButtonKeyAdapter extends java.awt.event.KeyAdapter {
+  public class ButtonKeyAdapter extends java.awt.event.KeyAdapter {
     protected boolean keyIsHandleable(KeyEvent e) {
       return e.getKeyChar() != KeyEvent.CHAR_UNDEFINED &&
           !e.isActionKey() &&
@@ -205,14 +205,14 @@ public strictfp class InterfacePanelLite
 
   /// output
 
-  public void handle(org.nlogo.window.Events.OutputEvent e) {
-    if (getOutputWidget() != null && !e.toCommandCenter) {
-      if (e.clear) {
+  public void handle(Events.OutputEvent e) {
+    if (getOutputWidget() != null && !e.toCommandCenter()) {
+      if (e.clear()) {
         getOutputWidget().outputArea().clear();
       }
-      if (e.outputObject != null) {
+      if (e.outputObject() != null) {
         getOutputWidget().outputArea().append
-            (e.outputObject, e.wrapLines);
+          (e.outputObject(), e.wrapLines());
       }
     }
   }
@@ -307,7 +307,7 @@ public strictfp class InterfacePanelLite
 
   /// loading and saving
 
-  public Widget loadWidget(String[] strings, final String modelVersion) {
+  public Widget loadWidget(scala.collection.Seq<String> strings, final String modelVersion) {
     Widget.LoadHelper helper =
         new Widget.LoadHelper() {
           public String version() {
@@ -319,9 +319,9 @@ public strictfp class InterfacePanelLite
           }
         };
     try {
-      String type = strings[0];
-      int x = Integer.parseInt(strings[1]);
-      int y = Integer.parseInt(strings[2]);
+      String type = strings.apply(0);
+      int x = Integer.parseInt(strings.apply(1));
+      int y = Integer.parseInt(strings.apply(2));
       if (!type.equals("GRAPHICS-WINDOW") &&
           VersionHistory.olderThan13pre1(modelVersion)) {
         y += viewWidget.getAdditionalHeight();
@@ -375,16 +375,16 @@ public strictfp class InterfacePanelLite
     }
   }
 
-  public void handle(org.nlogo.window.Events.LoadSectionEvent e) {
-    if (e.section == ModelSectionJ.WIDGETS()) {
+  public void handle(Events.LoadSectionEvent e) {
+    if (e.section() == ModelSectionJ.WIDGETS()) {
       try {
-        List<List<String>> v =
-            ModelReader.parseWidgets(e.lines);
+        scala.collection.Seq<scala.collection.Seq<String>> v =
+          ModelReader.parseWidgets(e.lines());
         if (null != v) {
           setVisible(false);
-          for (List<String> v2 : v) {
-            String[] strings = v2.toArray(new String[v2.size()]);
-            loadWidget(strings, e.version);
+          for (scala.collection.Iterator<scala.collection.Seq<String>> iter = v.iterator();
+               iter.hasNext();) {
+            loadWidget(iter.next(), e.version());
           }
         }
       } finally {
@@ -392,6 +392,29 @@ public strictfp class InterfacePanelLite
         revalidate();
       }
     }
+  }
+
+  @Override
+  public List<org.nlogo.window.Widget> getWidgetsForSaving() {
+    /* This is copied from WidgetPanel. Would be better to have a unified implementation
+     * but there is currently no common superclass where to put it. I tried converting
+     * WidgetContainer to a scala trait and have the implementation there, but I ran into
+     * all sorts of trouble. Might give it another try eventually. NP 2012-09-13.
+     */
+    List<org.nlogo.window.Widget> result = new ArrayList<org.nlogo.window.Widget>();
+    java.awt.Component[] comps = getComponents();
+    // loop backwards so JLayeredPane gives us the components
+    // in back-to-front order for saving - ST 9/29/03
+    for (int i = comps.length - 1; i >= 0; i--) {
+      if (comps[i] instanceof WidgetWrapperInterface) {
+        WidgetWrapperInterface wrapper = (WidgetWrapperInterface) comps[i];
+        Widget widget = wrapper.widget();
+        if (!result.contains(widget)) {
+          result.add(widget);
+        }
+      }
+    }
+    return result;
   }
 
 }

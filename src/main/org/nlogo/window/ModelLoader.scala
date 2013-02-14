@@ -4,7 +4,7 @@ package org.nlogo.window
 
 import org.nlogo.swing.BrowserLauncher
 import java.awt.Container
-import org.nlogo.window.Events._
+import Events._
 import org.nlogo.api.{I18N, ModelType, ModelReader, ModelSection, Version}
 
 object ModelLoader {
@@ -12,7 +12,7 @@ object ModelLoader {
 
   @throws(classOf[InvalidVersionException])
   def load(linkParent: Container, modelPath: String,
-           modelType: ModelType, map: java.util.Map[ModelSection, Array[String]]) {
+           modelType: ModelType, map: ModelReader.ModelMap) {
     Loader(linkParent).loadHelper(modelPath, modelType, map)
   }
   @throws(classOf[InvalidVersionException])
@@ -20,11 +20,11 @@ object ModelLoader {
     Loader(linkParent).loadHelper(modelPath, modelType, ModelReader.parseModel(source))
   }
 
-  private case class Loader(linkParent: Container) extends org.nlogo.window.Event.LinkChild {
+  private case class Loader(linkParent: Container) extends Event.LinkChild {
     def getLinkParent = linkParent
 
     @throws(classOf[InvalidVersionException])
-    def loadHelper(modelPath: String, modelType: ModelType, map: java.util.Map[ModelSection, Array[String]]) {
+    def loadHelper(modelPath: String, modelType: ModelType, map: ModelReader.ModelMap) {
       if (map == null) throw new InvalidVersionException()
       val version = ModelReader.parseVersion(map)
       if (version == null || !version.startsWith("NetLogo")) throw new InvalidVersionException()
@@ -78,19 +78,21 @@ object ModelLoader {
           ModelSection.ModelSettings)
 
         val loadSectionEvents = sectionTypes.map { section => // kludgey - ST 2/11/08
-          val lines = (section, map.get(section).length) match {
+          val lines = (section, map(section).size) match {
             // Kludge: If the shapes section is empty, then this is an unconverted pre-Beta4 model,
             // so the default shapes must be loaded -- or maybe it's a model (such as the
             // default model) that was hand-edited to have no shapes in it, so it always gets
             // the default shapes when opened. - ST 9/2/03
-            case (ModelSection.TurtleShapes, 0) => ModelReader.defaultShapes
-            case (ModelSection.LinkShapes, 0) => ModelReader.defaultLinkShapes
+            case (ModelSection.TurtleShapes, 0) =>
+              ModelReader.defaultShapes
+            case (ModelSection.LinkShapes, 0) =>
+              ModelReader.defaultLinkShapes
             // Another kludge: pre-4.1 model files have
             // org.nlogo.aggregate.gui in them instead of org.nlogo.sdm.gui,
             // so translate on the fly - ST 2/18/08
             case (ModelSection.SystemDynamics, _) =>
-              map.get(section).map(_.replaceAll("org.nlogo.aggregate.gui", "org.nlogo.sdm.gui"))
-            case _ => map.get(section)
+              map(section).map(_.replaceAll("org.nlogo.aggregate.gui", "org.nlogo.sdm.gui"))
+            case _ => map(section)
           }
           new LoadSectionEvent(version, section, lines, lines.mkString("\n"))
         }

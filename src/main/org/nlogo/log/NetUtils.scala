@@ -30,7 +30,7 @@ object NetUtils {
   def httpPost(postKVs: Map[String, String], dest: URL, encoding: String = DefaultByteEncoding): String = {
     import collection.JavaConverters.seqAsJavaListConverter
     val post = new HttpPost(dest.toURI)
-    post.setEntity(new UrlEncodedFormEntity((postKVs map { case (key, value) => new BasicNameValuePair(key, value) } toSeq) asJava, Charset.forName("UTF-8")))
+    post.setEntity(new UrlEncodedFormEntity((postKVs.map { case (key, value) => new BasicNameValuePair(key, value) }.toSeq).asJava, Charset.forName("UTF-8")))
     readResponse(generateClient.execute(post))
   }
 
@@ -44,7 +44,7 @@ object NetUtils {
   def downloadFile(from: String, to: String): String = {
 
     val readSize = DefaultReadSize
-    val fileName = from.reverse takeWhile (_ != '/') reverse
+    val fileName = from.reverse.takeWhile(_ != '/').reverse
     val outPath  = to + System.getProperty("file.separator") + fileName
 
     val inStream  = new BufferedInputStream(new URL(from).openStream())

@@ -77,18 +77,7 @@ public strictfp class DummyMonitorWidget
   @Override
   public void paintComponent(java.awt.Graphics g) {
     super.paintComponent(g); // paint background
-    java.awt.FontMetrics fm = g.getFontMetrics();
-    int labelHeight = fm.getMaxDescent() + fm.getMaxAscent();
-    java.awt.Dimension d = getSize();
-    g.setColor(getForeground());
-    String displayName = displayName();
-    int boxHeight = (int) StrictMath.ceil(labelHeight * 1.4);
-    g.drawString(displayName, LEFT_MARGIN,
-        d.height - BOTTOM_MARGIN - boxHeight - fm.getMaxDescent() - 1);
-    g.setColor(java.awt.Color.WHITE);
-    g.fillRect(LEFT_MARGIN, d.height - BOTTOM_MARGIN - boxHeight,
-        d.width - LEFT_MARGIN - RIGHT_MARGIN - 1, boxHeight);
-    g.setColor(java.awt.Color.BLACK);
+    MonitorPainter.paint(g, getSize(), getForeground(), displayName(), "");
   }
 
   private int decimalPlaces = 3;
@@ -122,23 +111,22 @@ public strictfp class DummyMonitorWidget
   }
 
   @Override
-  public Object load(String[] strings, Widget.LoadHelper helper) {
-    String displayName = strings[5];
+  public Object load(scala.collection.Seq<String> strings, Widget.LoadHelper helper) {
+    String displayName = strings.apply(5);
 
     if (displayName.equals("NIL")) {
       name("");
     } else {
       name(displayName);
     }
-    if (strings.length > 7) {
-      decimalPlaces = Integer.parseInt(strings[7]);
+    if (strings.size() > 7) {
+      decimalPlaces = Integer.parseInt(strings.apply(7));
     }
-    int x1 = Integer.parseInt(strings[1]);
-    int y1 = Integer.parseInt(strings[2]);
-    int x2 = Integer.parseInt(strings[3]);
-    int y2 = Integer.parseInt(strings[4]);
+    int x1 = Integer.parseInt(strings.apply(1));
+    int y1 = Integer.parseInt(strings.apply(2));
+    int x2 = Integer.parseInt(strings.apply(3));
+    int y2 = Integer.parseInt(strings.apply(4));
     setSize(x2 - x1, y2 - y1);
     return this;
   }
 }
-

@@ -2,9 +2,9 @@
 
 package org.nlogo.app
 
-class IncludesMenu(target: ProceduresTab)
+class IncludesMenu(target: CodeTab)
 extends org.nlogo.swing.ToolBarMenu("Includes")
-with org.nlogo.window.Events.CompiledEvent.Handler
+with org.nlogo.window.Events.CompiledEventHandler
 {
 
   // If we're empty, we have no size, are invisible and don't affect our parent's layout
@@ -13,7 +13,7 @@ with org.nlogo.window.Events.CompiledEvent.Handler
   private var includesTable: Map[String, String] = null
 
   def handle(e: org.nlogo.window.Events.CompiledEvent) {
-    if(e.sourceOwner.isInstanceOf[ProceduresTab])
+    if(e.sourceOwner.isInstanceOf[CodeTab])
       updateVisibility()
   }
 
@@ -25,7 +25,7 @@ with org.nlogo.window.Events.CompiledEvent.Handler
 
   override def populate(menu: javax.swing.JPopupMenu) {
     import collection.JavaConverters._
-    includesTable = target.getIncludesTable.asScala.toMap
+    includesTable = target.getIncludesTable
     if(includesTable.isEmpty) {
       val nullItem = new javax.swing.JMenuItem("<No Includes Defined>")
       nullItem.setEnabled(false)

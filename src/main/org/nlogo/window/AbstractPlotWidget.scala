@@ -11,18 +11,17 @@ import org.nlogo.plot.{PlotManagerInterface, PlotLoader, PlotPen, Plot}
 import java.awt.GridBagConstraints.REMAINDER
 import java.awt.{List=>AWTList, _}
 import image.BufferedImage
-import org.nlogo.window.Events.{WidgetRemovedEvent, AfterLoadEvent}
+import Events.{WidgetRemovedEvent, AfterLoadEvent}
 
 abstract class AbstractPlotWidget(val plot:Plot, val plotManager: PlotManagerInterface)
-        extends Widget with Editable with Plot.DirtyListener with
-                org.nlogo.window.Events.AfterLoadEvent.Handler with
-                org.nlogo.window.Events.WidgetRemovedEvent.Handler with
-                org.nlogo.window.Events.CompiledEvent.Handler {
+        extends Widget with Editable with
+                Events.AfterLoadEventHandler with
+                Events.WidgetRemovedEventHandler with
+                Events.CompiledEventHandler {
 
   import AbstractPlotWidget._
 
   private var fullyConstructed = false
-  plot.dirtyListener = Some(this)
   val canvas = new PlotCanvas(plot)
   private val legend = new PlotLegend(plot, this)
   private val nameLabel = new JLabel("", javax.swing.SwingConstants.CENTER)
@@ -137,25 +136,17 @@ abstract class AbstractPlotWidget(val plot:Plot, val plotManager: PlotManagerInt
 
   def refreshGUI() {
     def getLabel(d:Double) = if(d.toString.endsWith(".0")) d.toString.dropRight(2) else d.toString
-    xAxis.setMin(getLabel(plot.xMin))
-    xAxis.setMax(getLabel(plot.xMax))
-    yAxis.setMin(getLabel(plot.yMin))
-    yAxis.setMax(getLabel(plot.yMax))
-    if(plot.pensDirty) {
-      legend.refresh()
-      plot.pensDirty = false
-    }
+    xAxis.setMin(getLabel(plot.state.xMin))
+    xAxis.setMax(getLabel(plot.state.xMax))
+    yAxis.setMin(getLabel(plot.state.yMin))
+    yAxis.setMax(getLabel(plot.state.yMax))
+    legend.refresh()
   }
 
   /// satisfy the usual obligations of top-level widgets
   override def classDisplayName = I18N.gui.get("tabs.run.widgets.plot")
   override def needsPreferredWidthFudgeFactor = false
   override def zoomSubcomponents = true
-  def makeDirty(){
-    // yuck! plot calls makeDirty when its being constructed.
-    // but canvas isnt created yet.
-    if(fullyConstructed) canvas.makeDirty()
-  }
   override def helpLink = Some("docs/programming.html#plotting")
   def propertySet = Properties.plot
   def showLegend = legend.open
@@ -199,20 +190,25 @@ abstract class AbstractPlotWidget(val plot:Plot, val plotManager: PlotManagerInt
   def updateCode = plot.updateCode
   def updateCode(updateCode: String){ plot.updateCode=updateCode }
 
-  def defaultXMin = plot.defaultXMin
-  def defaultXMin(defaultXMin: Double){ plot.defaultXMin=defaultXMin }
+  def defaultXMin = plot.defaultState.xMin
+  def defaultXMin(defaultXMin: Double) {
+    plot.defaultState = plot.defaultState.copy(xMin = defaultXMin) }
 
-  def defaultYMin = plot.defaultYMin
-  def defaultYMin(defaultYMin: Double){ plot.defaultYMin=defaultYMin }
+  def defaultXMax = plot.defaultState.xMax
+  def defaultXMax(defaultXMax: Double) {
+    plot.defaultState = plot.defaultState.copy(xMax = defaultXMax) }
 
-  def defaultXMax = plot.defaultXMax
-  def defaultXMax(defaultXMax: Double){ plot.defaultXMax=defaultXMax }
+  def defaultYMin = plot.defaultState.yMin
+  def defaultYMin(defaultYMin: Double) {
+    plot.defaultState = plot.defaultState.copy(yMin = defaultYMin) }
 
-  def defaultYMax = plot.defaultYMax
-  def defaultYMax(defaultYMax: Double){ plot.defaultYMax=defaultYMax }
+  def defaultYMax = plot.defaultState.yMax
+  def defaultYMax(defaultYMax: Double) {
+    plot.defaultState = plot.defaultState.copy(yMax = defaultYMax) }
 
-  def defaultAutoPlotOn = plot.defaultAutoPlotOn
-  def defaultAutoPlotOn(defaultAutoPlotOn: Boolean){ plot.defaultAutoPlotOn=defaultAutoPlotOn }
+  def defaultAutoPlotOn = plot.defaultState.autoPlotOn
+  def defaultAutoPlotOn(defaultAutoPlotOn: Boolean) {
+    plot.defaultState = plot.defaultState.copy(autoPlotOn = defaultAutoPlotOn) }
 
   /// sizing
   override def getMinimumSize = AbstractPlotWidget.MIN_SIZE
@@ -227,11 +223,11 @@ abstract class AbstractPlotWidget(val plot:Plot, val plotManager: PlotManagerInt
     s.append((if (null != plotName && plotName.trim != "") plotName else "NIL") + "\n")
     s.append((if (null != xLabel && xLabel.trim != "") xLabel else "NIL") + "\n")
     s.append((if (null != yLabel && yLabel.trim != "") yLabel else "NIL") + "\n")
-    s.append(plot.defaultXMin + "\n")
-    s.append(plot.defaultXMax + "\n")
-    s.append(plot.defaultYMin + "\n")
-    s.append(plot.defaultYMax + "\n")
-    s.append(plot.defaultAutoPlotOn + "\n")
+    s.append(plot.defaultState.xMin + "\n")
+    s.append(plot.defaultState.xMax + "\n")
+    s.append(plot.defaultState.yMin + "\n")
+    s.append(plot.defaultState.yMax + "\n")
+    s.append(plot.defaultState.autoPlotOn + "\n")
     s.append(legend.open + "\n")
     s.append(plot.saveString + "\n")
     s.append("PENS\n")
@@ -243,12 +239,12 @@ abstract class AbstractPlotWidget(val plot:Plot, val plotManager: PlotManagerInt
     import org.nlogo.api.StringUtils.escapeString
     for (pen <- plot.pens; if (!pen.temporary)) {
       s.append("\"" + escapeString(pen.name) + "\" " +
-              pen.defaultInterval + " " + pen.defaultMode + " " +
-              pen.defaultColor + " " + pen.inLegend + " " + pen.saveString + "\n")
+              pen.defaultState.interval + " " + pen.defaultState.mode + " " +
+              pen.defaultState.color + " " + pen.inLegend + " " + pen.saveString + "\n")
     }
   }
 
-  def load(strings: Array[String], helper: Widget.LoadHelper): Object = {
+  def load(strings: Seq[String], helper: Widget.LoadHelper): Object = {
     val List(x1,y1,x2,y2) = strings.drop(1).take(4).map(_.toInt).toList
     setSize(x2 - x1, y2 - y1)
     if (7 < strings.length) {
@@ -256,7 +252,7 @@ abstract class AbstractPlotWidget(val plot:Plot, val plotManager: PlotManagerInt
       yLabel(if (strings(7) == "NIL") "" else strings(7))
     }
     if (13 < strings.length) { legend.open=strings(13).toBoolean }
-    PlotLoader.parsePlot(strings, plot, helper.convert(_, false))
+    PlotLoader.parsePlot(strings.toArray, plot, helper.convert(_, false))
     plotName(plot.name)
     clear()
     this
@@ -280,7 +276,7 @@ abstract class AbstractPlotWidget(val plot:Plot, val plotManager: PlotManagerInt
 
   def handle(e: WidgetRemovedEvent){ if(e.widget == this){ plotManager.forgetPlot(plot) } }
 
-  def handle(e:org.nlogo.window.Events.CompiledEvent){
+  def handle(e: Events.CompiledEvent){
     if(e.sourceOwner.isInstanceOf[ProceduresInterface]){
       plotManager.compilePlot(plot)
       recolor()

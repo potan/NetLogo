@@ -57,12 +57,12 @@ object Logger {
     buttonMsg.updateButtonMessage(name, "pressed", "user")
     Buttons.info(buttonMsg)
   }
-  def logAddWidget(tyype: String, name: String) {
-    widgetMsg.updateWidgetMessage(tyype.toLowerCase, name, "added")
+  def logAddWidget(tpe: String, name: String) {
+    widgetMsg.updateWidgetMessage(tpe.toLowerCase, name, "added")
     Widgets.info(widgetMsg)
   }
-  def logWidgetRemoved(tyype: String, name: String) {
-    widgetMsg.updateWidgetMessage(tyype.toLowerCase, name, "removed")
+  def logWidgetRemoved(tpe: String, name: String) {
+    widgetMsg.updateWidgetMessage(tpe.toLowerCase, name, "removed")
     Widgets.info(widgetMsg)
   }
   def logSpeedSlider(value: Double) {
@@ -108,7 +108,8 @@ object Logger {
 class Logger(studentName: String) extends LoggingListener {
 
   var logDirectory = System.getProperty("java.io.tmpdir")
-  
+
+  import scala.language.implicitConversions
   implicit def javaEnum2Iterator[T](e: JEnumeration[T]) = Option(e) map (_.asScala) getOrElse (Iterator())
 
   def configure(reader: java.io.Reader) {

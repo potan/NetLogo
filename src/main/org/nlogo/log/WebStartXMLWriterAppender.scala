@@ -28,10 +28,27 @@ trait WebStartAppender extends Appender {
 
 // A `Writer` subclass for writing log entries to remote locations
 class RemoteLogWriter(mode: LogSendingMode, destinations: URL*) extends Writer {
-  import DirectorMessage.{ToDirectorWrite, ToDirectorAbandon, ToDirectorFinalize}
-  private val director = new LogDirector(mode, destinations: _*).start()
+
+  import
+    scala.concurrent.{ Await, duration },
+      duration._
+
+  import
+    akka.{ actor, pattern, util },
+      actor.{ ActorSystem, Props },
+      pattern.ask,
+      util.Timeout
+
+  import DirectorMessage._
+
+  private val system   = ActorSystem("LoggingSystem")
+  private val director = system.actorOf(Props(new LogDirector(mode, destinations: _*)))
+
+  private implicit val timeout = Timeout(5.seconds)
+
   override def write(cbuf: Array[Char], off: Int, len: Int) { director ! ToDirectorWrite(cbuf.subSequence(off, off + len).toString) }
   override def flush()  { /* While the Director manages its own flushing, making this throw an exception breaks everything; ignore operation */ }
-  /*none*/ def delete() { director !? ToDirectorAbandon }
-  override def close()  { director !? ToDirectorFinalize } // It's important that this blocks while waiting for operation to complete
+  /*none*/ def delete() { Await.result(director ? ToDirectorAbandon,  timeout.duration) }
+  override def close()  { Await.result(director ? ToDirectorFinalize, timeout.duration) } // It's important that this blocks while waiting for operation to complete
+
 }
