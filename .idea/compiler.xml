@@ -35,3 +35,4 @@
     <option name="ADDITIONAL_OPTIONS_STRING" value="-g -deprecation -encoding us-ascii -Xlint:all -Xlint:-serial -Xlint:-fallthrough -source 1.6 -target 1.6" />
   </component>
 </project>
+

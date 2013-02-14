@@ -26,6 +26,8 @@
       <sourceFolder url="file://$MODULE_DIR$/extensions/unit-test/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/tools" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/plugins/ReviewTab/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/headless/src/main" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/headless/src/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/extensions/sample" />
       <excludeFolder url="file://$MODULE_DIR$/extensions/sample-scala" />
       <excludeFolder url="file://$MODULE_DIR$/plugins/ReviewTab/classes" />
