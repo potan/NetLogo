@@ -42,7 +42,7 @@ libraryDependencies in ThisBuild ++= Seq(
 
 name := "NetLogo"
 
-artifactName := { (_, _, _) => "NetLogo.jar" }
+artifactName := { (_, _, _) => "NetLogoGUI.jar" }
 
 onLoadMessage := ""
 
