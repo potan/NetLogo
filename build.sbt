@@ -36,6 +36,10 @@ crossPaths in ThisBuild := false
 
 nogen in ThisBuild  := { System.setProperty("org.nlogo.noGenerator", "true") }
 
+// temporarily needed for ScalaTest build which hasn't propagated
+// to Maven Central yet - ST 8/14/13
+resolvers += Resolver.sonatypeRepo("releases")
+
 libraryDependencies in ThisBuild ++= Seq(
   "asm" % "asm-all" % "3.3.1",
   "org.scala-lang" % "scala-parser-combinators" % scalaVersion.value,
@@ -45,8 +49,6 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
   "org.scalatest" %% "scalatest" % "2.0.M6-SNAP35" % "test"
 )
-
-name := "NetLogo"
 
 artifactName := { (_, _, _) => "NetLogoHeadless.jar" }
 
@@ -90,5 +92,6 @@ seq(Dump.settings: _*)
 
 seq(ChecksumsAndPreviews.settings: _*)
 
-// supported yet in sbt 0.13?
-// org.scalastyle.sbt.ScalastylePlugin.Settings
+seq(Scaladoc.settings: _*)
+
+org.scalastyle.sbt.ScalastylePlugin.Settings

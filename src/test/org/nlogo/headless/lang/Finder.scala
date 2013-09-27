@@ -46,17 +46,41 @@ class TestExtensions extends Finder {
 trait Finder extends FunSuite with SlowTest {
   def files: Iterable[File]
   // parse tests first, then run them
-  for(t <- parseFiles(files) if shouldRun(t))
+  for(t <- parseFiles(files))
     test(t.fullName, new Tag(t.suiteName){}, new Tag(t.fullName){}) {
       for (mode <- t.modes)
-        Fixture.withFixture(s"${t.fullName} ($mode)"){
-          fixture =>
-            val nonDecls = t.entries.filterNot(_.isInstanceOf[Declaration])
-            fixture.declare(t.entries.collect{
-              case d: Declaration => d.source}.mkString("\n"))
-            nonDecls.foreach(fixture.runEntry(mode, _))
+        if (shouldRun(t, mode))
+          withFixture(s"${t.fullName} ($mode)")(
+            fixture => runTest(t, mode, fixture))
+    }
+  def withFixture[T](name: String)(body: AbstractFixture => T): T =
+    Fixture.withFixture(name)(body)
+  def runTest(t: LanguageTest, mode: TestMode, fixture: AbstractFixture) {
+    withFixture(s"${t.fullName} ($mode)") {
+      fixture =>
+        val nonDecls = t.entries.filterNot(_.isInstanceOf[Declaration])
+        val decls =
+          t.entries.collect{case d: Declaration => d.source}
+            .mkString("\n").trim
+        if (nonDecls.forall(!_.isInstanceOf[Open]))
+          fixture.open(ModelCreator.Model(
+            code = decls,
+            dimensions = fixture.defaultDimensions,
+            widgets = StandardWidgets))
+        else
+          assert(t.entries.forall(!_.isInstanceOf[Declaration]))
+        nonDecls.foreach{
+          case Open(path) =>
+            fixture.open(path)
+          case command: Command =>
+            fixture.runCommand(command, mode)
+          case reporter: Reporter =>
+            fixture.runReporter(reporter, mode)
+          case _ =>
+            throw new IllegalStateException
         }
     }
+  }
   def parseFiles(files: Iterable[File]): Iterable[LanguageTest] =
     for {
       f <- files if !f.isDirectory
@@ -75,7 +99,7 @@ trait Finder extends FunSuite with SlowTest {
   }
   // on the core branch the _3D tests are gone, but extensions tests still have them since we
   // didn't branch the extensions, so we still need to filter those out - ST 1/13/12
-  def shouldRun(t: LanguageTest) =
+  def shouldRun(t: LanguageTest, mode: TestMode) =
     !t.testName.endsWith("_3D") && {
       import api.Version.useGenerator
       if (t.testName.startsWith("Generator"))
@@ -84,6 +108,12 @@ trait Finder extends FunSuite with SlowTest {
         !useGenerator
       else true
     }
+  val StandardWidgets = {
+    import ModelCreator.{ Plot, Pens, Pen }
+    List(
+      Plot(name = "plot1", pens = Pens(Pen(name = "pen1"), Pen(name = "pen2"))),
+      Plot(name = "plot2", pens = Pens(Pen(name = "pen1"), Pen(name = "pen2"))))
+  }
 }
 
 case class TxtsInDir(dir: String) extends Iterable[File] {

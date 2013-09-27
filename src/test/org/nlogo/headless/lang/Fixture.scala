@@ -25,7 +25,33 @@ object Fixture {
   }
 }
 
-class Fixture(name: String) {
+// implemented below via HeadlessWorkspace, but also to be implemented
+// elsewhere by Tortoise - ST 8/28/13
+trait AbstractFixture {
+  import Assertions._
+  def defaultDimensions: api.WorldDimensions
+  def declare(source: String, dimensions: api.WorldDimensions = defaultDimensions)
+  def open(path: String)
+  def open(model: ModelCreator.Model)
+  def runCommand(command: Command, mode: TestMode)
+  def runReporter(reporter: Reporter, mode: TestMode)
+  def readFromString(literal: String): AnyRef
+  def checkResult(mode: TestMode, reporter: String, expectedResult: String, actualResult: AnyRef) {
+    // To be as safe as we can, let's do two separate checks here...  we'll compare the results both
+    // as values and as printed representations.  Most of the time these checks will come out
+    // the same, but it might be good to have both, partially as a way of giving both Equality and
+    // Dump lots of testing! - ST 5/8/03, 8/21/13
+    withClue(s"""$mode: not equals(): reporter "$reporter"""") {
+      assertResult(expectedResult)(
+        api.Dump.logoObject(actualResult, true, false))
+    }
+    assert(api.Equality.equals(actualResult,
+      readFromString(expectedResult)),
+      s"""$mode: not recursivelyEqual(): reporter "$reporter"""")
+  }
+}
+
+class Fixture(name: String) extends AbstractFixture {
 
   import Assertions._
 
@@ -34,9 +60,7 @@ class Fixture(name: String) {
 
   val workspace = HeadlessWorkspace.newInstance
   workspace.silent = true
-  workspace.initForTesting(
-    new api.WorldDimensions(-5, 5, -5, 5),
-    HeadlessWorkspace.TestDeclarations)
+
   // the default error handler just spits something to stdout or stderr or somewhere.
   // we want to fail hard. - ST 7/21/10
   workspace.importerErrorHandler =
@@ -52,129 +76,98 @@ class Fixture(name: String) {
   val compiler: CompilerInterface =
     Femto.scalaSingleton("org.nlogo.compile.Compiler")
 
-  def runEntry(mode: TestMode, entry: Entry) {
-    entry match {
-      case Open(path) =>
-        workspace.open(path)
-      case Declaration(content) =>
-        declare(content)
-      case Command(kind, command, Success(_)) =>
-        testCommand(command, kind, mode)
-      case Command(kind, command, RuntimeError(message)) =>
-        testCommand(command, kind, mode, error = Some(message))
-      case Command(kind, command, StackTrace(trace)) =>
-        testCommand(command, kind, mode, trace = Some(trace))
-      case Command(kind, command, CompileError(message)) =>
-        testCommand(command, kind, mode, compileError = Some(message))
-      case Reporter(reporter, Success(result)) =>
-        testReporter(reporter, mode, result = Some(result))
-      case Reporter(reporter, RuntimeError(message)) =>
-        testReporter(reporter, mode, error = Some(message))
-      case Reporter(reporter, StackTrace(trace)) =>
-        testReporter(reporter, mode, trace = Some(trace))
-    }
+  def defaultDimensions = api.WorldDimensions.square(5)
+
+  def declare(source: String, dimensions: api.WorldDimensions = defaultDimensions) {
+    ModelCreator.open(workspace,
+      dimensions = dimensions,
+      source = source)
   }
 
-  def declare(source: String) {
-    val results = {
-      compiler.compileProgram(
-        HeadlessWorkspace.TestDeclarations + source,
-        api.Program.empty,
-        workspace.getExtensionManager)
-    }
-    workspace.procedures = results.proceduresMap
-    workspace.world.program(results.program)
-    workspace.init()
-    workspace.world.realloc()
-  }
+  def readFromString(literal: String): AnyRef =
+    compiler.frontEnd.readFromString(literal)
 
-  def testReporter(reporter: String, result: String) {
-    testReporter(reporter, result = Some(result))
-  }
+  // tempted to DRY runReporter and runCommand together since they're so similar, but refraining
+  // since there are many little differences, too - ST 8/15/13
 
-  def testReporter(reporter: String,
-                   mode: TestMode = NormalMode,
-                   result: Option[String] = None,
-                   error: Option[String] = None,
-                   trace: Option[String] = None) {
+  def runReporter(reporter: Reporter, mode: TestMode = NormalMode) {
+    require(workspace.modelOpened)
     try {
       workspace.clearLastLogoException()
       val wrappedReporter = mode match {
-        case NormalMode => reporter
-        case RunMode    => s"""runresult "${api.StringUtils.escapeString(reporter)}""""
+        case NormalMode =>
+          reporter.reporter
+        case RunMode    =>
+          s"""runresult "${api.StringUtils.escapeString(reporter.reporter)}""""
       }
       val compiled = workspace.compileReporter(wrappedReporter)
       val actualResult = workspace.runCompiledReporter(owner(), compiled)
       if(workspace.lastLogoException != null)
         throw workspace.lastLogoException
-      if (error.isDefined || trace.isDefined)
-        fail(s"""failed to cause runtime error: "$reporter"""")
-      // To be as safe as we can, let's do two separate checks here...  we'll compare the results both
-      // as Logo values, and as printed representations.  Most of the time these checks will come out
-      // the same, but it's good to have a both, partially as a way of giving both
-      // Utils.recursivelyEqual() and Dump.logoObject() lots of testing! - ST 5/8/03
-      withClue(s"""$mode: not equals(): reporter "$reporter"""") {
-        assertResult(result.get)(
-          api.Dump.logoObject(actualResult, true, false))
+      reporter.result match {
+        case Success(expectedResult) =>
+          checkResult(mode, reporter.reporter, expectedResult, actualResult)
+        case _ =>
+          fail(s"""failed to cause runtime error: "${reporter.reporter}"""")
       }
-      assert(api.Equality.equals(actualResult,
-        compiler.readFromString(result.get)),
-        s"""$mode: not recursivelyEqual(): reporter "$reporter"""")
     }
-    catch catcher(s"$mode: reporter: $reporter", error = error, trace = trace)
+    catch catcher(s"$mode: reporter: $reporter", reporter.result)
   }
 
-  def testCommand(command: String,
-                  kind: api.AgentKind = api.AgentKind.Observer,
-                  mode: TestMode = NormalMode,
-                  compileError: Option[String] = None,
-                  error: Option[String] = None,
-                  trace: Option[String] = None) {
+  def runCommand(command: Command, mode: TestMode = NormalMode) {
+    require(workspace.modelOpened)
     try {
       workspace.clearLastLogoException()
       val wrappedCommand = mode match {
-        case NormalMode => command
-        case RunMode    => s"""run "${api.StringUtils.escapeString(command)}""""
+        case NormalMode =>
+          command.command
+        case RunMode    =>
+          s"""run "${api.StringUtils.escapeString(command.command)}""""
       }
-      val compiled = workspace.compileCommands(wrappedCommand, kind)
-      if (mode == NormalMode && compileError.isDefined)
+      val compiled = workspace.compileCommands(wrappedCommand, command.kind)
+      if (mode == NormalMode && command.result.isInstanceOf[CompileError])
         fail("no CompilerException occurred")
-      workspace.runCompiledCommands(owner(kind), compiled)
+      workspace.runCompiledCommands(owner(command.kind), compiled)
       if(workspace.lastLogoException != null)
         throw workspace.lastLogoException
-      if (error.isDefined || trace.isDefined)
-        fail(s"""failed to cause runtime error: "$command"""")
+      if (!command.result.isInstanceOf[Success])
+        fail(s"""failed to cause runtime error: "${command.command}"""")
     }
-    catch catcher(s"command: $command", compileError, error, trace)
+    catch catcher(s"command: $command", command.result)
   }
 
   // ConstantFolder makes this complicated, by turning some runtime errors into
   // compile-time errors.  Furthermore in RunMode the compile-time error again
   // becomes a runtime error, but with "Runtime error: " tacked onto the front.
-  private def catcher(clue: String,
-                      compileError: Option[String] = None,
-                      error: Option[String] = None,
-                      trace: Option[String] = None)
-      : PartialFunction[Throwable, Unit] = {
-    case ex: api.LogoException if compileError.isDefined || error.isDefined || trace.isDefined =>
+  private def catcher(clue: String, result: Result): PartialFunction[Throwable, Unit] = {
+    case ex @ (_: api.LogoException | _: api.CompilerException) =>
       withClue(clue) {
-        for (expected <- compileError)
-          checkMessage(ex, expected)
-        for (expected <- error)
-          checkMessage(ex, expected)
-        for (expected <- trace)
-          assertResult(expected)(workspace.lastErrorReport.stackTrace.get)
-      }
-    case ex: api.CompilerException if compileError.isDefined || error.isDefined =>
-      withClue(clue) {
-        for (expected <- compileError)
-          checkMessage(ex, expected)
-        for (expected <- error)
-          checkMessage(ex, expected)
+        result match {
+          case CompileError(expected) =>
+            assertResult(expected)(
+              ex.getMessage.stripPrefix(runtimePrefix))
+          case RuntimeError(expected) =>
+            assertResult(expected)(
+              ex.getMessage.stripPrefix(runtimePrefix))
+          case StackTrace(expected) =>
+            assertResult(expected)(workspace.lastErrorReport.stackTrace.get)
+          case _ =>
+            throw ex
+        }
       }
   }
-  private def checkMessage(ex: Exception, expected: String) =
-    assertResult(expected)(
-      ex.getMessage.stripPrefix(runtimePrefix))
+
+  // convenience methods for when you don't want to mess with constructing
+  // Command, Reporter, and/or Result objects
+  def testReporter(reporter: String, result: String) =
+    runReporter(Reporter(reporter, Success(result)))
+  def testCommand(command: String, result: Result = Success("")) =
+    runCommand(Command(command, api.AgentKind.Observer, result))
+
+  // more convenience
+  def open(path: String) =
+    workspace.open(path)
+  def open(model: ModelCreator.Model) =
+    workspace.openString(model.toString)
 
 }

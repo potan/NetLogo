@@ -59,22 +59,23 @@ object Depend {
       "" -> Nil,
       "agent" -> List("api"),
       "api" -> List("util"),
-      "compile" -> List("parse"),
+      "compile" -> List("prim"),
+      "compile/back" -> List("compile"),
+      "compile/front" -> List("compile", "parse"),
+      "compile/middle" -> List("compile"),
       "drawing" -> List("api"),
       "generate" -> List("prim"),
       "headless" -> List("mirror","workspace"),
       "headless/lang" -> List("headless"),
+      "headless/lang/misc" -> List("headless/lang"),
       "headless/misc" -> List("headless"),
-      "headless/mirror" -> List("headless"),
-      "headless/model" -> List("headless"),
       "headless/render" -> List("headless"),
       "job" -> List("nvm"),
       "lab" -> List("nvm"),
       "lex" -> List("api"),
       "mirror" -> List("drawing", "plot", "shape"),
       "nvm" -> List("agent"),
-      "parse" -> List("parse0", "prim","prim/dead","prim/threed"),
-      "parse0" -> List("api"),
+      "parse" -> List("api"),
       "plot" -> List("api"),
       "prim" -> List("nvm"),
       "prim/etc" -> List("nvm"),
@@ -134,7 +135,7 @@ check [ASM-free-zone] independentOf org.objectweb.*
 [XML-free-zone] = org.nlogo.* excluding [lab]
 check [XML-free-zone] independentOf [xml]
 
-[parser-combinator-free-zone] = org.nlogo.* excluding org.nlogo.parse0.StructureCombinators* org.nlogo.parse0.SeqReader* org.nlogo.parse0.Cleanup
+[parser-combinator-free-zone] = org.nlogo.* excluding org.nlogo.parse.StructureCombinators* org.nlogo.parse.SeqReader* org.nlogo.parse.Cleanup
 check [parser-combinator-free-zone] directlyIndependentOf [parser-combinators]
 """
               )

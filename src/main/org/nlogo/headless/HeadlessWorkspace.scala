@@ -11,7 +11,7 @@ import org.nlogo.api.{ AgentKind, Program, Version, RendererInterface, WorldDime
                        ModelReader, CompilerException, LogoException, SimpleJobOwner,
                        CommandRunnable, ReporterRunnable, UpdateMode }
 import org.nlogo.agent.World
-import org.nlogo.nvm.{ LabInterface, Context, ParserInterface,
+import org.nlogo.nvm.{ LabInterface, Context, FrontEndInterface,
                        DefaultParserServices, CompilerInterface }
 import org.nlogo.workspace.AbstractWorkspace
 import org.nlogo.util.Femto
@@ -41,32 +41,14 @@ object HeadlessWorkspace {
   }
 
   def newLab: LabInterface = {
-    val parser: ParserInterface =
-      Femto.scalaSingleton("org.nlogo.parse.Parser")
+    val frontEnd: FrontEndInterface =
+      Femto.scalaSingleton("org.nlogo.compile.front.FrontEnd")
     // kludgy, use AnyRef here because ProtocolLoader doesn't implement an interface - ST 4/25/13
     val protocolLoader: AnyRef =
       Femto.get("org.nlogo.lab.ProtocolLoader",
-        new DefaultParserServices(parser))
+        new DefaultParserServices(frontEnd))
     Femto.get("org.nlogo.lab.Lab", protocolLoader)
   }
-
-  /**
-   * Internal use only.
-   */
-  // batrachomyomachia!
-  val TestDeclarations =
-    "globals [glob1 glob2 glob3 ]\n" +
-    "breed [mice mouse]\n " +
-    "breed [frogs frog]\n " +
-    "breed [nodes node]\n " +
-    "directed-link-breed [directed-links directed-link]\n" +
-    "undirected-link-breed [undirected-links undirected-link]\n" +
-    "turtles-own [tvar]\n" +
-    "patches-own [pvar]\n" +
-    "mice-own [age fur]\n" +
-    "frogs-own [age spots]\n" +
-    "directed-links-own [lvar]\n" +
-    "undirected-links-own [weight]\n"
 
 }
 
@@ -95,7 +77,7 @@ class HeadlessWorkspace(
 extends AbstractWorkspace(_world)
 with org.nlogo.workspace.WorldLoaderInterface {
 
-  override def parser = compiler
+  override def parser = compiler.frontEnd
 
   val drawingActionBroker = new DrawingActionBroker(renderer.trailDrawer)
   world.trailDrawer(drawingActionBroker)
@@ -106,7 +88,9 @@ with org.nlogo.workspace.WorldLoaderInterface {
   /**
    * Has a model been opened in this workspace?
    */
-  var modelOpened = false
+  private[this] var _modelOpened = false
+  def modelOpened = _modelOpened
+  def setModelOpened() { _modelOpened = true }
 
   val outputAreaBuffer = new StringBuilder
 
@@ -137,69 +121,6 @@ with org.nlogo.workspace.WorldLoaderInterface {
    * Internal use only.
    */
   def waitForQueuedEvents() { }
-
-  /**
-   * Internal use only.
-   */
-  def initForTesting(worldSize: Int) {
-    initForTesting(worldSize, "")
-  }
-
-  /**
-   * Internal use only.
-   */
-  def initForTesting(worldSize: Int, modelString: String) {
-    initForTesting(-worldSize, worldSize, -worldSize, worldSize, modelString)
-  }
-
-  /**
-   * Internal use only.
-   */
-  def initForTesting(minPxcor: Int, maxPxcor: Int, minPycor: Int, maxPycor: Int, source: String) {
-    initForTesting(new WorldDimensions(minPxcor, maxPxcor, minPycor, maxPycor), source)
-  }
-
-  /**
-   * Internal use only.
-   */
-  def initForTesting(d: WorldDimensions, source: String) {
-    world.turtleShapeList.add(org.nlogo.shape.VectorShape.getDefaultShape)
-    world.linkShapeList.add(org.nlogo.shape.LinkShape.getDefaultLinkShape)
-    world.createPatches(d)
-    val results = compiler.compileProgram(
-      source, Program.empty(),
-      getExtensionManager)
-    procedures = results.proceduresMap
-    clearRunCache()
-    init()
-    world.program(results.program)
-    world.realloc()
-
-    // setup some test plots.
-    plotManager.forgetAll()
-    val plot1 = plotManager.newPlot("plot1")
-    plot1.createPlotPen(name = "pen1")
-    plot1.createPlotPen(name = "pen2")
-    val plot2 = plotManager.newPlot("plot2")
-    plot2.createPlotPen(name = "pen1")
-    plot2.createPlotPen(name = "pen2")
-    plotManager.compileAllPlots()
-
-    clearDrawing()
-  }
-
-  def initForTesting(minPxcor: Int, maxPxcor: Int, minPycor: Int, maxPycor: Int) {
-    initForTesting(new WorldDimensions(minPxcor, maxPxcor, minPycor, maxPycor))
-  }
-
-  /**
-   * Internal use only.
-   */
-  def initForTesting(d: org.nlogo.api.WorldDimensions) {
-    world.createPatches(d)
-    world.realloc()
-    clearDrawing()
-  }
 
   /**
    * Kills all turtles, clears all patch variables, and makes a new patch grid.
@@ -461,24 +382,15 @@ with org.nlogo.workspace.WorldLoaderInterface {
   }
 
   /**
-   * Opens a model stored in a string
-   *
-   * @param modelContents
-   */
-  override def openString(modelContents: String) {
-    fileManager.handleModelChange()
-    new HeadlessModelOpener(this).openFromMap(ModelReader.parseModel(modelContents))
-  }
-
-  /**
    * Opens a model stored in a string.
    * Can only be called once per instance of HeadlessWorkspace
    *
    * @param source The complete model, including widgets and so forth,
    *               in the same format as it would be stored in a file.
    */
-  def openFromSource(source: String) {
-    new HeadlessModelOpener(this).openFromMap(ModelReader.parseModel(source))
+  def openString(modelContents: String) {
+    new HeadlessModelOpener(this)
+      .openFromMap(ModelReader.parseModel(modelContents))
   }
 
   /**

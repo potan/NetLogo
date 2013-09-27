@@ -3,7 +3,7 @@
 package org.nlogo.headless
 package lang
 
-import org.nlogo.api.AgentKind
+import org.nlogo.api, api.AgentKind
 
 object Parser {
 
@@ -35,18 +35,19 @@ object Parser {
   }
 
   def parse(line: String): Entry = {
-    if (line.startsWith("to ") || line.startsWith("to-report ") || line.startsWith("extensions"))
+    if (line.split(' ').headOption.exists(s =>
+        api.Keywords.isKeyword(s) || s.toUpperCase == "BREED"))
       Declaration(line)
     else line.trim match {
       case CommandErrorRegex(kind, command, err) =>
         if (err.startsWith("ERROR "))
-          Command(agentKind(kind), command,
+          Command(command, agentKind(kind),
             RuntimeError(err.stripPrefix("ERROR ")))
         else if (err.startsWith("COMPILER ERROR "))
-          Command(agentKind(kind), command,
+          Command(command, agentKind(kind),
             CompileError(err.stripPrefix("COMPILER ERROR ")))
         else if (err.startsWith("STACKTRACE "))
-          Command(agentKind(kind), command,
+          Command(command, agentKind(kind),
             StackTrace(err.stripPrefix("STACKTRACE ").replace("\\n", "\n")))
         else
           sys.error("error missing!: " + err)
@@ -60,7 +61,7 @@ object Parser {
         else
           Reporter(reporter, Success(result))
       case CommandRegex(kind, command) =>
-        Command(agentKind(kind), command)
+        Command(command, agentKind(kind))
       case OpenRegex(path) => Open(path)
       case _ =>
         throw new IllegalArgumentException(

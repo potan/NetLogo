@@ -1,18 +1,15 @@
 // (C) Uri Wilensky. https://github.com/NetLogo/NetLogo
 
-// At the moment this is only used by TestRenderer, but it could easily
-// be useful elsewhere - ST 7/17/13
-
 package org.nlogo.headless
 package render
 
-import org.nlogo.util.MockSuite
-import org.nlogo.api.{ModelReader, Version, ViewSettings, Perspective}
-import org.nlogo.shape.{LinkShape, VectorShape}
-import org.nlogo.util.WorldType
+import org.nlogo.api
+import org.nlogo.shape.{ LinkShape, VectorShape }
+import org.nlogo.util.{ MockSuite, WorldType }
 
 trait TestUsingWorkspace extends MockSuite {
-    case class SimpleViewSettings(
+
+  case class SimpleViewSettings(
     fontSize: Int = 10,
     patchSize:Double = 13,
     viewWidth: Double = 33,
@@ -21,13 +18,13 @@ trait TestUsingWorkspace extends MockSuite {
     viewOffsetY: Double = 0,
     drawSpotlight: Boolean = false,
     renderPerspective: Boolean = false,
-    perspective: Perspective = Perspective.Observe) extends ViewSettings
+    perspective: api.Perspective = api.Perspective.Observe) extends api.ViewSettings
 
   def testUsingWorkspace(testName: String, radius: Int = 5,
                          worldType: WorldType = WorldType.Torus)
                         (f: HeadlessWorkspace => Unit) {
     test(testName) {
-      runWorkspaceTest(radius, worldType){f}
+      runWorkspaceTest(radius, worldType){ f }
     }
   }
 
@@ -44,16 +41,16 @@ trait TestUsingWorkspace extends MockSuite {
     val workspace: HeadlessWorkspace = HeadlessWorkspace.newInstance
     workspace.silent = true
     try {
-      workspace.initForTesting(-radius, radius, -radius, radius, HeadlessWorkspace.TestDeclarations)
+      ModelCreator.open(workspace, api.WorldDimensions.square(radius))
       workspace.changeTopology(worldType.xWrap, worldType.yWrap)
       workspace.world.turtleShapeList.replaceShapes(
         VectorShape.parseShapes(
-          ModelReader.defaultShapes.toArray, Version.version))
+          api.ModelReader.defaultShapes.toArray, api.Version.version))
       workspace.world.linkShapeList.replaceShapes(
         LinkShape.parseShapes(
-          ModelReader.defaultLinkShapes.toArray, Version.version))
+          api.ModelReader.defaultLinkShapes.toArray, api.Version.version))
       f(workspace)
     }
-    finally {workspace.dispose()}
+    finally workspace.dispose()
   }
 }

@@ -18,7 +18,6 @@ import org.nlogo.api.TrailDrawerInterface;
 import org.nlogo.api.ValueConstraint;
 import org.nlogo.api.WorldDimensionException;
 import org.nlogo.api.WorldDimensions;
-import org.nlogo.nvm.LetBinding;
 import org.nlogo.util.MersenneTwisterFast;
 
 import java.util.Arrays;
@@ -476,62 +475,6 @@ public strictfp class World
             variableName.equalsIgnoreCase("WORLD-HEIGHT");
   }
 
-  public WorldDimensions setDimensionVariable(String variableName, int value, WorldDimensions d)
-      throws WorldDimensionException {
-    if (variableName.equalsIgnoreCase("MIN-PXCOR")) {
-      d.minPxcor_$eq(value);
-    } else if (variableName.equalsIgnoreCase("MAX-PXCOR")) {
-      d.maxPxcor_$eq(value);
-    } else if (variableName.equalsIgnoreCase("MIN-PYCOR")) {
-      d.minPycor_$eq(value);
-    } else if (variableName.equalsIgnoreCase("MAX-PYCOR")) {
-      d.maxPycor_$eq(value);
-    } else if (variableName.equalsIgnoreCase("WORLD-WIDTH")) {
-      d.minPxcor_$eq(growMin(_minPxcor, _maxPxcor, value, d.minPxcor()));
-      d.maxPxcor_$eq(growMax(_minPxcor, _maxPxcor, value, d.maxPxcor()));
-    } else if (variableName.equalsIgnoreCase("WORLD-HEIGHT")) {
-      d.minPycor_$eq(growMin(_minPycor, _maxPycor, value, d.minPycor()));
-      d.maxPycor_$eq(growMax(_minPycor, _maxPycor, value, d.maxPycor()));
-    }
-    return d;
-  }
-
-  public int growMin(int min, int max, int value, int d)
-      throws WorldDimensionException {
-    if (value < 1) {
-      throw new WorldDimensionException();
-    }
-
-    if (max == -min) {
-      if (value % 2 != 1) {
-        throw new WorldDimensionException();
-      }
-      return -(value - 1) / 2;
-    } else if (max == 0) {
-      return -(value - 1);
-    }
-
-    return d;
-  }
-
-  public int growMax(int min, int max, int value, int d)
-      throws WorldDimensionException {
-    if (value < 1) {
-      throw new WorldDimensionException();
-    }
-
-    if (max == -min) {
-      if (value % 2 != 1) {
-        throw new WorldDimensionException();
-      }
-      return (value - 1) / 2;
-    } else if (min == 0) {
-      return (value - 1);
-    }
-
-    return d;
-  }
-
   public boolean equalDimensions(WorldDimensions d) {
     return d.minPxcor() == _minPxcor &&
       d.maxPxcor() == _maxPxcor &&
@@ -540,7 +483,7 @@ public strictfp class World
   }
 
   public Patch getPatch(int id) {
-    return (Patch) _patches.agent(id);
+    return (Patch) _patches.array()[id];
   }
 
   public Patch getPatchAt(double x, double y)
@@ -549,7 +492,7 @@ public strictfp class World
     int yc = roundY(y);
     int id = ((_worldWidth * (_maxPycor - yc))
         + xc - _minPxcor);
-    return (Patch) _patches.agent(id);
+    return (Patch) _patches.array()[id];
   }
 
   // this procedure is the same as calling getPatchAt when the topology is a torus
@@ -574,7 +517,7 @@ public strictfp class World
       yc = (fractPart > 0.5) ? intPart - 1 : intPart;
     }
     int patchid = ((_worldWidth * (_maxPycor - yc)) + xc - _minPxcor);
-    return (Patch) _patches.agent(patchid);
+    return (Patch) _patches.array()[patchid];
   }
 
   public boolean validPatchCoordinates(int xc, int yc) {
@@ -586,12 +529,12 @@ public strictfp class World
   }
 
   public Patch fastGetPatchAt(int xc, int yc) {
-    return (Patch) _patches.agent((_worldWidth * (_maxPycor - yc))
-                                  + xc - _minPxcor);
+    return (Patch) _patches.array()[(_worldWidth * (_maxPycor - yc))
+                                    + xc - _minPxcor];
   }
 
   public Turtle getTurtle(long id) {
-    return (Turtle) _turtles.agent(id);
+    return (Turtle) _turtles.getAgent(Double.valueOf(id));
   }
 
   public Link getLink(Object end1, Object end2, AgentSet breed) {
@@ -720,7 +663,9 @@ public strictfp class World
         agents.clear();
     }
 
+    if (_turtles != null) _turtles.clear(); // so a SimpleChangeEvent is published
     _turtles = new TreeAgentSet(AgentKindJ.Turtle(), "TURTLES");
+    if (_links != null) _links.clear(); // so a SimpleChangeEvent is published
     _links = new TreeAgentSet(AgentKindJ.Link(), "LINKS");
 
     int x = minPxcor;
