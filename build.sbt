@@ -16,7 +16,7 @@ val nogen = taskKey[Unit]("disable bytecode generator")
 /// (at the moment we have no subprojects on this branch, but that could change - ST 7/23/13)
 ///
 
-scalaVersion in ThisBuild := "2.11.0-M4"
+scalaVersion in ThisBuild := "2.11.0-M5"
 
 // -Xfatal-warnings temporarily omitted here; should be reinstated before
 // merging Scala 2.11 upgrade - ST 7/30/13
@@ -42,12 +42,12 @@ resolvers += Resolver.sonatypeRepo("releases")
 
 libraryDependencies in ThisBuild ++= Seq(
   "asm" % "asm-all" % "3.3.1",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0-RC1",
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0-RC2",
   "org.jmock" % "jmock" % "2.5.1" % "test",
   "org.jmock" % "jmock-legacy" % "2.5.1" % "test",
   "org.jmock" % "jmock-junit4" % "2.5.1" % "test",
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
-  "org.scalatest" %% "scalatest" % "2.0.M6-SNAP35" % "test"
+  "org.scalatest" %% "scalatest" % "2.0.M7" % "test"
 )
 
 artifactName := { (_, _, _) => "NetLogoHeadless.jar" }
