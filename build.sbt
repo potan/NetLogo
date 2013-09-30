@@ -42,7 +42,7 @@ resolvers += Resolver.sonatypeRepo("releases")
 
 libraryDependencies in ThisBuild ++= Seq(
   "asm" % "asm-all" % "3.3.1",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0-RC2",
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0-RC3",
   "org.jmock" % "jmock" % "2.5.1" % "test",
   "org.jmock" % "jmock-legacy" % "2.5.1" % "test",
   "org.jmock" % "jmock-junit4" % "2.5.1" % "test",
