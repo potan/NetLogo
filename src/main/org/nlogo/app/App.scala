@@ -261,7 +261,6 @@ class App extends
     ModelSavedEvent.Handler with
     Events.SwitchedTabsEvent.Handler with
     AboutToQuitEvent.Handler with
-    ZoomedEvent.Handler with
     Controllable {
 
   import App.{pico, logger, commandLineMagic, commandLineModel, commandLineURL, commandLineModelIsLaunch, loggingName}
@@ -561,12 +560,6 @@ class App extends
 
     }
     else fileMenu.newModel()
-  }
-
-  /// zooming
-
-  def handle(e: ZoomedEvent) {
-    smartPack(frame.getPreferredSize)
   }
 
   def resetZoom() {
@@ -967,8 +960,8 @@ class App extends
     val (currentWidth, currentHeight) = (frame.getWidth, frame.getHeight)
 
     // Maybe grow the window, but never shrink it
-    var newWidth  = max(min(targetSize.width, maxWidth),   currentWidth)
-    var newHeight = max(min(targetSize.height, maxHeight), currentHeight)
+    var newWidth  = min(targetSize.width, maxWidth)
+    var newHeight = min(targetSize.height, maxHeight)
 
     // move up/left to get more room if possible and necessary
     val moveLeft = max(0, frame.getLocation().x + newWidth  - maxX)
