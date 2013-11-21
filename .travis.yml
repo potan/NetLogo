@@ -5,7 +5,7 @@ before_install:
 install:
   - sbt update
 script:
-  - ./tortoise.sh --noclean
+  - ./tortoise.sh
 
 notifications:
   irc:

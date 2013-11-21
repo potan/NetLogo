@@ -1,47 +1,50 @@
-///
-/// root project
-///
-
 val root = project in file (".") configs(Testing.configs: _*)
 
+scalaVersion := "2.10.3"
+
+mainClass in Compile := Some("org.nlogo.headless.Main")
+
+onLoadMessage := ""
+
+ivyLoggingLevel := UpdateLogging.Quiet
+
 ///
-/// task keys
+/// building
 ///
 
-// surely there's some better way to do this - ST 5/30/12
-val nogen = taskKey[Unit]("disable bytecode generator")
-
-///
-/// ThisBuild -- applies to subprojects too
-/// (at the moment we have no subprojects on this branch, but that could change - ST 7/23/13)
-///
-
-scalaVersion in ThisBuild := "2.10.3"
-
-scalacOptions in ThisBuild ++=
+scalacOptions ++=
   "-deprecation -unchecked -feature -Xcheckinit -encoding us-ascii -target:jvm-1.7 -Xlint -Xfatal-warnings"
   .split(" ").toSeq
 
-javacOptions in ThisBuild ++=
+javacOptions ++=
   "-g -deprecation -encoding us-ascii -Werror -Xlint:all -Xlint:-serial -Xlint:-fallthrough -Xlint:-path -source 1.7 -target 1.7"
   .split(" ").toSeq
 
-// only log problems plz
-ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet
-
-// we're not cross-building for different Scala versions
-crossPaths in ThisBuild := false
-
-nogen in ThisBuild  := { System.setProperty("org.nlogo.noGenerator", "true") }
-
-libraryDependencies in ThisBuild ++= Seq(
+libraryDependencies ++= Seq(
   "asm" % "asm-all" % "3.3.1",
   "org.jmock" % "jmock" % "2.5.1" % "test",
   "org.jmock" % "jmock-legacy" % "2.5.1" % "test",
   "org.jmock" % "jmock-junit4" % "2.5.1" % "test",
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
-  "org.scalatest" %% "scalatest" % "2.0.RC3" % "test"
+  "org.scalatest" %% "scalatest" % "2.0" % "test"
 )
+
+scalaSource in Compile := baseDirectory.value / "src" / "main"
+
+scalaSource in Test := baseDirectory.value / "src" / "test"
+
+javaSource in Compile := baseDirectory.value / "src" / "main"
+
+javaSource in Test := baseDirectory.value / "src" / "test"
+
+unmanagedResourceDirectories in Compile += baseDirectory.value / "resources"
+
+///
+/// packaging and publishing
+///
+
+// don't cross-build for different Scala versions
+crossPaths := false
 
 artifactName := { (_, _, _) => "NetLogoHeadless.jar" }
 
@@ -58,47 +61,49 @@ mappings in (Test, packageBin) ++= {
   }
 }
 
-onLoadMessage := ""
+///
+/// Scaladoc
+///
 
-resourceDirectory in Compile := baseDirectory.value / "resources"
+val netlogoVersion = taskKey[String]("from api.Version")
 
-scalaSource in Compile := baseDirectory.value / "src" / "main"
+netlogoVersion := {
+  (testLoader in Test).value
+    .loadClass("org.nlogo.api.Version")
+    .getMethod("version")
+    .invoke(null).asInstanceOf[String]
+    .replaceFirst("NetLogo ", "")
+}
 
-scalaSource in Test := baseDirectory.value / "src" / "test"
+scalacOptions in (Compile, doc) ++= {
+  val version = netlogoVersion.value
+  Seq("-encoding", "us-ascii") ++
+    Opts.doc.title("NetLogo") ++
+    Opts.doc.version(version) ++
+    Opts.doc.sourceUrl("https://github.com/NetLogo/NetLogo/blob/" +
+                       version + "/src/main€{FILE_PATH}.scala")
+}
 
-javaSource in Compile := baseDirectory.value / "src" / "main"
+// compensate for issues.scala-lang.org/browse/SI-5388
+doc in Compile := {
+  val path = (doc in Compile).value
+  for (file <- Process(Seq("find", path.toString, "-name", "*.html")).lines)
+    IO.write(
+      new File(file),
+      IO.read(new File(file)).replaceAll("\\.java\\.scala", ".java"))
+  path
+}
 
-javaSource in Test := baseDirectory.value / "src" / "test"
-
-unmanagedResourceDirectories in Compile += baseDirectory.value / "resources"
-
-sourceGenerators in Compile <+= JFlexRunner.task
-
-resourceGenerators in Compile <+= I18n.resourceGeneratorTask
-
-mainClass in Compile := Some("org.nlogo.headless.Main")
-
-Extensions.extensionsTask
-
-val all = taskKey[Unit]("build all the things!!!")
-
-all := { val _ = (
-  (packageBin in Compile).value,
-  (packageBin in Test).value,
-  (compile in Test).value,
-  Extensions.extensions.value
-)}
-
-seq(Testing.settings: _*)
-
-seq(Depend.settings: _*)
-
-seq(Classycle.settings: _*)
-
-seq(Dump.settings: _*)
-
-seq(ChecksumsAndPreviews.settings: _*)
-
-seq(Scaladoc.settings: _*)
+///
+/// plugins
+///
 
 org.scalastyle.sbt.ScalastylePlugin.Settings
+
+///
+/// get stuff from project/*.scala
+///
+
+Testing.settings
+
+Depend.settings
