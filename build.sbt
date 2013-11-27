@@ -1,61 +1,54 @@
-///
-/// root project
-///
+val root = project in file (".") configs(FastMediumSlow.configs: _*)
 
-val root = project in file (".") configs(Testing.configs: _*)
+scalaVersion := "2.10.3"
 
-///
-/// task keys
-///
-
-// surely there's some better way to do this - ST 5/30/12
-val nogen = taskKey[Unit]("disable bytecode generator")
-
-///
-/// ThisBuild -- applies to subprojects too
-/// (at the moment we have no subprojects on this branch, but that could change - ST 7/23/13)
-///
-
-scalaVersion in ThisBuild := "2.11.0-M5"
-
-// -Xfatal-warnings temporarily omitted here; should be reinstated before
-// merging Scala 2.11 upgrade - ST 7/30/13
-scalacOptions in ThisBuild ++=
-  "-deprecation -unchecked -feature -Xcheckinit -encoding us-ascii -target:jvm-1.7 -Xlint"
-  .split(" ").toSeq
-
-javacOptions in ThisBuild ++=
-  "-g -deprecation -encoding us-ascii -Werror -Xlint:all -Xlint:-serial -Xlint:-fallthrough -Xlint:-path -source 1.7 -target 1.7"
-  .split(" ").toSeq
-
-// only log problems plz
-ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet
-
-// we're not cross-building for different Scala versions
-crossPaths in ThisBuild := false
-
-nogen in ThisBuild  := { System.setProperty("org.nlogo.noGenerator", "true") }
-
-// temporarily needed for ScalaTest build which hasn't propagated
-// to Maven Central yet - ST 8/14/13
-resolvers += Resolver.sonatypeRepo("releases")
-
-libraryDependencies in ThisBuild ++= Seq(
-  "asm" % "asm-all" % "3.3.1",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0-RC3",
-  "org.jmock" % "jmock" % "2.5.1" % "test",
-  "org.jmock" % "jmock-legacy" % "2.5.1" % "test",
-  "org.jmock" % "jmock-junit4" % "2.5.1" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
-  // no 2.0.RC2 available for 2.11.0-M5 at the moment - ST 10/21/13
-  "org.scalatest" %% "scalatest" % "2.0.M7" % "test"
-)
-
-artifactName := { (_, _, _) => "NetLogoHeadless.jar" }
+mainClass in Compile := Some("org.nlogo.headless.Main")
 
 onLoadMessage := ""
 
-resourceDirectory in Compile := baseDirectory.value / "resources"
+ivyLoggingLevel := UpdateLogging.Quiet
+
+logBuffered in testOnly in Test := false
+
+///
+/// building
+///
+
+scalaVersion := "2.11.0-M5"
+
+// -Xfatal-warnings temporarily omitted here; should be reinstated before
+// merging Scala 2.11 upgrade - ST 7/30/13
+scalacOptions ++=
+  "-deprecation -unchecked -feature -Xcheckinit -encoding us-ascii -target:jvm-1.7 -Xlint"
+  .split(" ").toSeq
+
+javacOptions ++=
+  "-g -deprecation -encoding us-ascii -Werror -Xlint:all -Xlint:-serial -Xlint:-fallthrough -Xlint:-path -source 1.7 -target 1.7"
+  .split(" ").toSeq
+
+libraryDependencies ++= Seq(
+  "asm" % "asm-all" % "3.3.1",
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0-RC3"
+)
+
+libraryDependencies ++= Seq(
+  "org.jmock" % "jmock" % "2.5.1"             % "test",
+  "org.jmock" % "jmock-legacy" % "2.5.1"      % "test",
+  "org.jmock" % "jmock-junit4" % "2.5.1"      % "test",
+  "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
+  // no newer 2.0 available for 2.11.0-M7 at the moment - ST 11/27/13
+  "org.scalatest" %% "scalatest" % "2.0.M7"   % "test"
+)
+
+// reflections depends on some extra jars but for some reason we need to
+// explicitly list the transitive dependencies
+libraryDependencies ++= Seq(
+  "org.reflections" % "reflections" % "0.9.9-RC1" % "test",
+  "com.google.code.findbugs" % "jsr305" % "2.0.1" % "test",
+  "com.google.guava" % "guava" % "12.0"           % "test",
+  "org.javassist" % "javassist" % "3.16.1-GA"     % "test",
+  "org.slf4j" % "slf4j-nop" % "1.7.5"             % "test"
+)
 
 scalaSource in Compile := baseDirectory.value / "src" / "main"
 
@@ -65,34 +58,68 @@ javaSource in Compile := baseDirectory.value / "src" / "main"
 
 javaSource in Test := baseDirectory.value / "src" / "test"
 
-unmanagedResourceDirectories in Compile += baseDirectory.value / "resources"
+resourceDirectory in Compile := baseDirectory.value / "resources" / "main"
 
-sourceGenerators in Compile <+= JFlexRunner.task
+resourceDirectory in Test := baseDirectory.value / "resources" / "test"
 
-resourceGenerators in Compile <+= I18n.resourceGeneratorTask
+///
+/// packaging and publishing
+///
 
-mainClass in Compile := Some("org.nlogo.headless.Main")
+// don't cross-build for different Scala versions
+crossPaths := false
 
-Extensions.extensionsTask
+artifactName := { (_, _, _) => "NetLogoHeadless.jar" }
 
-val all = taskKey[Unit]("build all the things!!!")
+artifactName in Test := { (_, _, _) => "NetLogoHeadlessTests.jar" }
 
-all := { val _ = (
-  (packageBin in Compile).value,
-  (compile in Test).value,
-  Extensions.extensions.value
-)}
+publishArtifact in Test := true
 
-seq(Testing.settings: _*)
+///
+/// Scaladoc
+///
 
-seq(Depend.settings: _*)
+val netlogoVersion = taskKey[String]("from api.Version")
 
-seq(Classycle.settings: _*)
+netlogoVersion := {
+  (testLoader in Test).value
+    .loadClass("org.nlogo.api.Version")
+    .getMethod("version")
+    .invoke(null).asInstanceOf[String]
+    .replaceFirst("NetLogo ", "")
+}
 
-seq(Dump.settings: _*)
+scalacOptions in (Compile, doc) ++= {
+  val version = netlogoVersion.value
+  Seq("-encoding", "us-ascii") ++
+    Opts.doc.title("NetLogo") ++
+    Opts.doc.version(version) ++
+    Opts.doc.sourceUrl("https://github.com/NetLogo/NetLogo/blob/" +
+                       version + "/src/main€{FILE_PATH}.scala")
+}
 
-seq(ChecksumsAndPreviews.settings: _*)
+// compensate for issues.scala-lang.org/browse/SI-5388
+doc in Compile := {
+  val path = (doc in Compile).value
+  for (file <- Process(Seq("find", path.toString, "-name", "*.html")).lines)
+    IO.write(
+      new File(file),
+      IO.read(new File(file)).replaceAll("\\.java\\.scala", ".java"))
+  path
+}
 
-seq(Scaladoc.settings: _*)
+///
+/// plugins
+///
 
 org.scalastyle.sbt.ScalastylePlugin.Settings
+
+///
+/// get stuff from project/*.scala
+///
+
+LanguageTests.settings
+
+FastMediumSlow.settings
+
+Depend.settings
