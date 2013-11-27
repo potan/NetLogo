@@ -14,7 +14,7 @@ logBuffered in testOnly in Test := false
 /// building
 ///
 
-scalaVersion := "2.11.0-M5"
+scalaVersion := "2.11.0-M7"
 
 // -Xfatal-warnings temporarily omitted here; should be reinstated before
 // merging Scala 2.11 upgrade - ST 7/30/13
@@ -28,16 +28,15 @@ javacOptions ++=
 
 libraryDependencies ++= Seq(
   "asm" % "asm-all" % "3.3.1",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0-RC3"
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0-RC5"
 )
 
 libraryDependencies ++= Seq(
   "org.jmock" % "jmock" % "2.5.1"             % "test",
   "org.jmock" % "jmock-legacy" % "2.5.1"      % "test",
   "org.jmock" % "jmock-junit4" % "2.5.1"      % "test",
-  "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
-  // no newer 2.0 available for 2.11.0-M7 at the moment - ST 11/27/13
-  "org.scalatest" %% "scalatest" % "2.0.M7"   % "test"
+  "org.scalacheck" %% "scalacheck" % "1.11.1" % "test",
+  "org.scalatest" %% "scalatest" % "2.0.1-SNAP4" % "test"
 )
 
 // reflections depends on some extra jars but for some reason we need to
