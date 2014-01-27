@@ -25,7 +25,7 @@ version := "5.1.0"
 /// building
 ///
 
-scalaVersion := "2.11.0-M7"
+scalaVersion := "2.11.0-M8"
 
 // -Xfatal-warnings temporarily omitted here; should be reinstated before
 // merging Scala 2.11 upgrade - ST 7/30/13
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "org.jmock" % "jmock-legacy" % "2.5.1"      % "test",
   "org.jmock" % "jmock-junit4" % "2.5.1"      % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.1" % "test",
-  "org.scalatest" %% "scalatest" % "2.0.1-SNAP4" % "test"
+  "org.scalatest" %% "scalatest" % "2.0.1-SNAP7" % "test"
 )
 
 // reflections depends on some extra jars but for some reason we need to
