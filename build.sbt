@@ -10,6 +10,17 @@ ivyLoggingLevel := UpdateLogging.Quiet
 
 logBuffered in testOnly in Test := false
 
+name := "NetLogoHeadless"
+
+organization := "org.nlogo"
+
+licenses += ("GPL-2.0", url("http://opensource.org/licenses/GPL-2.0"))
+
+// Used by the publish-versioned plugin
+isSnapshot := true
+
+version := "5.1.0"
+
 ///
 /// building
 ///
@@ -68,10 +79,6 @@ resourceDirectory in Test := baseDirectory.value / "resources" / "test"
 // don't cross-build for different Scala versions
 crossPaths := false
 
-artifactName := { (_, _, _) => "NetLogoHeadless.jar" }
-
-artifactName in Test := { (_, _, _) => "NetLogoHeadlessTests.jar" }
-
 publishArtifact in Test := true
 
 ///
@@ -117,8 +124,14 @@ org.scalastyle.sbt.ScalastylePlugin.Settings
 /// get stuff from project/*.scala
 ///
 
-LanguageTests.settings
-
 FastMediumSlow.settings
+
+bintrayPublishSettings
+
+PublishVersioned.settings
+
+bintray.Keys.repository in bintray.Keys.bintray := "NetLogoHeadless"
+
+bintray.Keys.bintrayOrganization in bintray.Keys.bintray := Some("netlogo")
 
 Depend.settings
