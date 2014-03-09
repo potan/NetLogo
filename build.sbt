@@ -27,10 +27,8 @@ version := "5.1.0"
 
 scalaVersion := "2.11.0-RC1"
 
-// -Xfatal-warnings temporarily omitted here; should be reinstated before
-// merging Scala 2.11 upgrade - ST 7/30/13
 scalacOptions ++=
-  "-deprecation -unchecked -feature -Xcheckinit -encoding us-ascii -target:jvm-1.7 -Xlint"
+  "-deprecation -unchecked -feature -Xcheckinit -encoding us-ascii -target:jvm-1.7 -Xlint -Xfatal-warnings"
   .split(" ").toSeq
 
 javacOptions ++=
