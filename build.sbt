@@ -25,7 +25,7 @@ version := "5.1.0"
 /// building
 ///
 
-scalaVersion := "2.11.0-M8"
+scalaVersion := "2.11.0-RC1"
 
 // -Xfatal-warnings temporarily omitted here; should be reinstated before
 // merging Scala 2.11 upgrade - ST 7/30/13
@@ -39,7 +39,7 @@ javacOptions ++=
 
 libraryDependencies ++= Seq(
   "asm" % "asm-all" % "3.3.1",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0-RC5"
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0"
 )
 
 libraryDependencies ++= Seq(
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "org.jmock" % "jmock-legacy" % "2.5.1" % "test",
   "org.jmock" % "jmock-junit4" % "2.5.1" % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.RC1" % "test"
+  "org.scalatest" %% "scalatest" % "2.1.0" % "test"
 )
 
 // reflections depends on some extra jars but for some reason we need to
