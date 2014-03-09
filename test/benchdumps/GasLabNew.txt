@@ -1949,12 +1949,12 @@ procedure GO:[OLD-CLOCK]{O---}:
           NEW scala/collection/mutable/StringBuilder
           DUP
           INVOKESPECIAL scala/collection/mutable/StringBuilder.<init> ()V
-          GETSTATIC scala/Predef$StringAdd$.MODULE$ : Lscala/Predef$StringAdd$;
+          GETSTATIC scala/Predef$any2stringadd$.MODULE$ : Lscala/Predef$any2stringadd$;
           GETSTATIC scala/Predef$.MODULE$ : Lscala/Predef$;
           ALOAD 6
-          INVOKEVIRTUAL scala/Predef$.StringAdd (Ljava/lang/Object;)Ljava/lang/Object;
+          INVOKEVIRTUAL scala/Predef$.any2stringadd (Ljava/lang/Object;)Ljava/lang/Object;
           LDC " is not a "
-          INVOKEVIRTUAL scala/Predef$StringAdd$.$plus$extension (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/String;
+          INVOKEVIRTUAL scala/Predef$any2stringadd$.$plus$extension (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/String;
           INVOKEVIRTUAL scala/collection/mutable/StringBuilder.append (Ljava/lang/Object;)Lscala/collection/mutable/StringBuilder;
           ALOAD 0
           GETFIELD org/nlogo/prim/_asm_procedurego_ask_11.world : Lorg/nlogo/agent/World;
