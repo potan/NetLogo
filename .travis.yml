@@ -1,5 +1,5 @@
 language: scala
-scala: 2.11.0-M4
+scala: 2.11.0-RC1
 before_install:
   - git submodule update --init --recursive
 install:
