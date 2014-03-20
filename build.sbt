@@ -1,6 +1,6 @@
 val root = project in file (".") configs(FastMediumSlow.configs: _*)
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.0-RC3"
 
 mainClass in Compile := Some("org.nlogo.headless.Main")
 
@@ -25,8 +25,6 @@ version := "5.1.0"
 /// building
 ///
 
-scalaVersion := "2.11.0-RC1"
-
 scalacOptions ++=
   "-deprecation -unchecked -feature -Xcheckinit -encoding us-ascii -target:jvm-1.7 -Xlint -Xfatal-warnings"
   .split(" ").toSeq
@@ -37,7 +35,7 @@ javacOptions ++=
 
 libraryDependencies ++= Seq(
   "asm" % "asm-all" % "3.3.1",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.0"
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
 )
 
 libraryDependencies ++= Seq(
@@ -45,7 +43,7 @@ libraryDependencies ++= Seq(
   "org.jmock" % "jmock-legacy" % "2.5.1" % "test",
   "org.jmock" % "jmock-junit4" % "2.5.1" % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.0" % "test"
+  "org.scalatest" %% "scalatest" % "2.1.2" % "test"
 )
 
 // reflections depends on some extra jars but for some reason we need to
