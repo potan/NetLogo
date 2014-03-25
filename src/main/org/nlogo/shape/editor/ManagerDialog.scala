@@ -7,11 +7,11 @@ import javax.swing.{JScrollPane, SwingConstants, Box, BoxLayout, JPanel, JLabel,
 import java.awt.{Font, Component}
 import javax.swing.event.{ListSelectionEvent, MouseInputAdapter, ListSelectionListener}
 import org.nlogo.shape.{VectorShape, ModelSectionReader}
-import org.nlogo.api.{I18N, ShapeList}
+import org.nlogo.api.{I18N, Shape, ShapeList}
 
 abstract class ManagerDialog(parentFrame: java.awt.Frame,
                              sectionReader: ModelSectionReader,
-                             val shapesList: DrawableList) extends JDialog(parentFrame)
+                             val shapesList: DrawableList[Shape]) extends JDialog(parentFrame)
         with ListSelectionListener with ImportDialog.ShapeParser {
 
   // abstract defs

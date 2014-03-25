@@ -33,7 +33,7 @@ class RecentFiles {
    */
   private def toCanonicalPath(path: String): Option[String] =
     try Some(new java.io.File(path).getCanonicalPath())
-    catch { case _ => None }
+    catch { case _ : Throwable => None }
 
   def loadFromPrefs() {
     paths = prefs.get(key, "").lines.toList

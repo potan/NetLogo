@@ -17,7 +17,7 @@ object Implicits {
     new ActionListener() { override def actionPerformed(e: ActionEvent) { fn() } }
   implicit def thunk2WindowAdapter[T](fn: () => T): WindowAdapter =
     new WindowAdapter() { override def windowClosing(e: WindowEvent) {fn()} }
-  implicit def JComboBoxToIterable(jcb: JComboBox) =
+  implicit def JComboBoxToIterable[X](jcb: JComboBox[X]) =
     for(i <- 0 until jcb.getItemCount)
     yield jcb getItemAt i
   implicit def thunk2documentListener[T](fn: () => T): DocumentListener =
@@ -30,7 +30,7 @@ object Implicits {
     new java.awt.event.ItemListener() {
       override def itemStateChanged(e: java.awt.event.ItemEvent) { fn() } }
 
-  implicit def EnrichComboBox(combo: JComboBox) = RichJComboBox(combo)
+  implicit def EnrichComboBox[X](combo: JComboBox[X]) = RichJComboBox[X](combo)
   implicit def EnrichContainer(c:Container) = new RichComponent(c)
 }
 
@@ -85,7 +85,7 @@ object RichJMenuItem {
   }
 }
 
-case class RichJComboBox(combo: JComboBox) {
+case class RichJComboBox[X](combo: JComboBox[X]) {
   class PossibleSelection[T](t: T) {
     def becomesSelected(f: => Unit) {
       combo.addItemListener(new ItemListener {

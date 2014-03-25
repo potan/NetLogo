@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public strictfp class DrawableList
-    extends javax.swing.JList
+public strictfp class DrawableList<T>
+    extends javax.swing.JList<T>
     implements EditorDialog.VectorShapeContainer {
   javax.swing.DefaultListModel listModel;
   final ShapeList shapeList;

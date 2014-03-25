@@ -86,7 +86,7 @@ class ControlCenter(server: ConnectionManager, frame: Frame, serverId: String, a
    * Panel in HubNet Control Center displays client list
    */
   class ClientsPanel(initialClientEntries: Iterable[String]) extends JPanel with ActionListener with ListSelectionListener {
-    private val listData = new DefaultListModel()
+    private val listData = new DefaultListModel[String]()
     private val clientsList = new JList(listData) {
       putClientProperty("Quaqua.List.style", "striped")
       setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION)
