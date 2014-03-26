@@ -3,12 +3,13 @@
 package org.nlogo.shape.editor;
 
 import org.nlogo.shape.DrawableShape;
+import org.nlogo.api.Shape;
 
 public strictfp class ShapeCellRenderer   // public for DeltaTick - ST 12/2/11
     extends javax.swing.JPanel
     implements javax.swing.ListCellRenderer<org.nlogo.api.Shape> {
 
-  protected Object theShape;
+  protected org.nlogo.api.Shape theShape;
   protected final java.awt.Component shapeComponent;
   protected final java.awt.Dimension dimension =
       new java.awt.Dimension(90, 34);
@@ -78,7 +79,7 @@ public strictfp class ShapeCellRenderer   // public for DeltaTick - ST 12/2/11
 
   // Method that actually renders the item
   public java.awt.Component getListCellRendererComponent
-  (javax.swing.JList list, Object value, int index,
+  (javax.swing.JList<? extends Shape> list, Shape value, int index,
    boolean isSelected, boolean cellHasFocus) {
     theShape = this.list.getShape(index);
     shapeName.setText(value.toString());

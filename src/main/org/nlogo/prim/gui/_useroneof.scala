@@ -17,7 +17,7 @@ class _useroneof extends Reporter {
     val list = argEvalList(context, 1)
     workspace match {
       case gw: GUIWorkspace =>
-        val items = list.map(Dump.logoObject).toArray[AnyRef]
+        val items = list.map(Dump.logoObject).toArray[String]
         gw.updateUI()
         val choice = workspace.waitForResult(
           new ReporterRunnable[AnyRef] {

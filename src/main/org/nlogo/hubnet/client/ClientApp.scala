@@ -139,7 +139,7 @@ class ClientApp extends JFrame("HubNet") with ErrorHandler with ClientAppInterfa
 
   def showExitMessage(title: String, message: String): Boolean = {
     EventQueue.mustBeEventDispatchThread()
-    val buttons = Array[Object](title, I18N.gui.get("common.buttons.cancel"))
+    val buttons = Array[String](title, I18N.gui.get("common.buttons.cancel"))
     0 == OptionDialog.show(loginDialog, "Confirm " + title, message, buttons)
   }
 

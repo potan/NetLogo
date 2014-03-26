@@ -21,7 +21,7 @@ class ClientGUI(editorFactory: org.nlogo.window.EditorFactory,clientView: Client
     sliderEventOnReleaseOnly(true)
 
     // override in order to throttle messages when a hubnet client is holding down a key
-    override def getKeyAdapter = new ButtonKeyAdapter {
+    override def getKeyAdapter = new ButtonKeyAdapter /* {
       val map = new collection.mutable.HashMap[ButtonWidget,Long]
       override def buttonKeyed(button: ButtonWidget) {
         val currentTime = System.currentTimeMillis
@@ -32,7 +32,7 @@ class ClientGUI(editorFactory: org.nlogo.window.EditorFactory,clientView: Client
           button.keyTriggered()
         }
       }
-    }
+    }*/
   }
 
   locally {

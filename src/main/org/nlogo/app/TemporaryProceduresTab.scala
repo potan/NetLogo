@@ -136,7 +136,7 @@ with org.nlogo.window.Events.AboutToQuitEvent.Handler
 
   @throws(classOf[UserCancelException])
   private def userWantsToSaveFirst = {
-    val options = Array[AnyRef](I18N.gui.get("common.buttons.save"), "Discard", I18N.gui.get("common.buttons.cancel"))
+    val options = Array[String](I18N.gui.get("common.buttons.save"), "Discard", I18N.gui.get("common.buttons.cancel"))
     val message = "Do you want to save the changes you made to " + filename + "?"
     org.nlogo.swing.OptionDialog.show(this, I18N.gui.get("common.messages.warning"), message, options) match {
       case 0 => true

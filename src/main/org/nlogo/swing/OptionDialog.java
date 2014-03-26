@@ -7,12 +7,12 @@ import java.util.List;
 
 public strictfp class OptionDialog
     extends UserDialog {
-  javax.swing.JComboBox options;
+  javax.swing.JComboBox<String> options;
 
   public OptionDialog(java.awt.Frame owner, String title,
-                      String message, Object[] choices, scala.Function1<String, String> i18n) {
+                      String message, String[] choices, scala.Function1<String, String> i18n) {
     super(owner, title, i18n);
-    options = new javax.swing.JComboBox(choices);
+    options = new javax.swing.JComboBox<String>(choices);
     addComponents(options, message);
   }
 
@@ -30,7 +30,7 @@ public strictfp class OptionDialog
   }
 
   public static int show(java.awt.Component owner, String title,
-                         String message, Object[] options) {
+                         String message, String[] options) {
     List<String> brokenLines = org.nlogo.awt.LineBreaker.breakLines
         (message,
             owner.getFontMetrics(owner.getFont()), DIALOG_WIDTH);
@@ -50,7 +50,7 @@ public strictfp class OptionDialog
   }
 
   public static int showIgnoringCloseBox(java.awt.Component owner, String title,
-                                         String message, Object[] options, boolean asList) {
+                                         String message, String[] options, boolean asList) {
     int result = -1;
     while (result == -1) {
       if (asList) {
@@ -63,7 +63,7 @@ public strictfp class OptionDialog
   }
 
   public static int showAsList(java.awt.Component owner, String title,
-                               String message, Object[] options) {
+                               String message, String[] options) {
     return Arrays.asList(options).indexOf
         (javax.swing.JOptionPane.showInputDialog
             (org.nlogo.awt.Hierarchy.getFrame(owner),

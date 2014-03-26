@@ -5,9 +5,11 @@ package org.nlogo.gl.render
 import java.nio.FloatBuffer
 import javax.media.opengl.GL
 
+import scala.collection.JavaConversions._
+
 private object LinkLine {
   val dashChoices =
-    Array[Short](0x0000.toShort, 0xffff.toShort,
+     Array[Short](0x0000.toShort, 0xffff.toShort,
                  0xf0f0.toShort, 0xcccc.toShort,
                  0xcaca.toShort)
 }

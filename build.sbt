@@ -1,4 +1,4 @@
-scalaVersion := "2.9.3"
+scalaVersion := "2.10.3"
 
 name := "NetLogo"
 
@@ -7,11 +7,13 @@ onLoadMessage := ""
 resourceDirectory in Compile <<= baseDirectory(_ / "resources")
 
 scalacOptions ++=
-  "-deprecation -unchecked -Xfatal-warnings -Xcheckinit -encoding us-ascii -optimize"
+//  "-deprecation -unchecked -Xfatal-warnings -Xcheckinit -encoding us-ascii -optimize -Yinline-warnings -feature"
+  "-unchecked -Xcheckinit -encoding us-ascii -Yinline-warnings -feature"
   .split(" ").toSeq
 
 javacOptions ++=
-  "-g -deprecation -encoding us-ascii -Werror -Xlint:all -Xlint:-serial -Xlint:-fallthrough -Xlint:-path -source 1.7 -target 1.7 -optimize"
+//  "-g -deprecation -encoding us-ascii -Werror -Xlint:all -Xlint:-serial -Xlint:-fallthrough -Xlint:-path -source 1.7 -target 1.7"
+  "-g -encoding us-ascii -source 1.7 -target 1.7"
   .format(java.io.File.pathSeparator)
   .split(" ").toSeq
 
@@ -71,8 +73,8 @@ libraryDependencies ++= Seq(
   "javax.media" % "jmf"  % "latest.integration" /* % "2.1.1e"*/,
   "org.pegdown" % "pegdown"  % "latest.integration" /* % "1.1.0"*/,
   "org.parboiled" % "parboiled-java"  % "latest.integration" /* % "1.0.2"*/,
-  "steveroy" % "mrjadapter"  % "1.2" from "http://ccl.northwestern.edu/devel/mrjadapter-1.2.jar",
-  "org.jhotdraw" % "jhotdraw"  % "6.0b1" from "http://ccl.northwestern.edu/devel/jhotdraw-6.0b1.jar",
+//  "steveroy" % "mrjadapter"  % "1.2" from "http://ccl.northwestern.edu/devel/mrjadapter-1.2.jar",
+//  "org.jhotdraw" % "jhotdraw"  % "6.0b1" from "http://ccl.northwestern.edu/devel/jhotdraw-6.0b1.jar",
 //  "ch.randelshofer" % "quaqua"  % "7.3.4" from "http://ccl.northwestern.edu/devel/quaqua-7.3.4.jar",
   "org.devzendo" % "Quaqua" % "7.3.4",
 //  "ch.randelshofer" % "swing-layout"  % "7.3.4" from "http://ccl.northwestern.edu/devel/swing-layout-7.3.4.jar",

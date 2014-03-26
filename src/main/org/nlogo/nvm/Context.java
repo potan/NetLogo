@@ -275,7 +275,7 @@ public final strictfp class Context {
       if (let == binding.let) {
         return binding.value;
       }
-      rest = rest.tail();
+      rest = rest.tail().toList();
     }
     return job.parentContext.getLet(let);
   }
@@ -289,7 +289,7 @@ public final strictfp class Context {
         binding.value = value;
         return;
       }
-      rest = rest.tail();
+      rest = rest.tail().toList();
     }
     job.parentContext.setLet(let, value);
   }

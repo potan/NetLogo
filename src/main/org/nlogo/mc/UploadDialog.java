@@ -32,7 +32,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
+import java.util.Vector;
 import java.util.List;
 
 public strictfp class UploadDialog extends JDialog {
@@ -44,9 +44,9 @@ public strictfp class UploadDialog extends JDialog {
   private JButton cancelButton;
   private JButton logoutButton;
   private JTextField modelNameField;
-  private JComboBox groupComboBox;
-  private DisableableComboBox visibilityComboBox;
-  private DisableableComboBox changeabilityComboBox;
+  private JComboBox<Group> groupComboBox;
+  private DisableableComboBox<Permission> visibilityComboBox;
+  private DisableableComboBox<Permission> changeabilityComboBox;
   private JRadioButton useCurrentViewRadioButton;
   private JRadioButton autoGenerateViewRadioButton;
   private JRadioButton noPreviewRadioButton;
@@ -55,7 +55,7 @@ public strictfp class UploadDialog extends JDialog {
   private JRadioButton newModelRadioButton;
   private JRadioButton childOfExistingModelRadioButton;
   private JRadioButton newVersionOfExistingRadioButton;
-  private DisableableComboBox existingModelNameComboBox;
+  private DisableableComboBox<Model> existingModelNameComboBox;
   private JTextField existingModelNameSearchField;
   private JTextField descriptionTextField;
   private JLabel modelNameLabel;
@@ -120,9 +120,9 @@ public strictfp class UploadDialog extends JDialog {
       }
 
     });
-    List<Group> groups = new ArrayList<Group>(communicator.getGroups());
+    Vector<Group> groups = new Vector<Group>(communicator.getGroups());
     groups.add(0, null);
-    groupComboBox.setModel(new DefaultComboBoxModel(groups.toArray()));
+    groupComboBox.setModel(new DefaultComboBoxModel<Group>(groups));
     everyonePermissionIndex = visibilityComboBox.addItem(Permission.getPermissions().get("a"), true);
     changeabilityComboBox.addItem(Permission.getPermissions().get("a"), true);
     groupPermissionIndex = visibilityComboBox.addItem(Permission.getPermissions().get("g"), false);
@@ -256,12 +256,12 @@ public strictfp class UploadDialog extends JDialog {
             //while an existing search is still executing
             currentModelSearchRequest = null;
             clearExistingModelNameComboBox();
-            existingModelNameComboBox.addItem("Error connecting to Modeling Commons", false);
+            existingModelNameComboBox.addItem(new Model(-1,"Error connecting to Modeling Commons"), false);
 
           }
         } else if(status.equals("INVALID_RESPONSE_FROM_SERVER")) {
           clearExistingModelNameComboBox();
-          existingModelNameComboBox.addItem("Invalid response from Modeling Commons", false);
+          existingModelNameComboBox.addItem(new Model(-1,"Invalid response from Modeling Commons"), false);
         } else if(status.equals("SUCCESS")) {
           existingModelNameComboBox.removeAllItems();
           if(models.size() > 0) {
@@ -274,7 +274,7 @@ public strictfp class UploadDialog extends JDialog {
               existingModelNameSearchField.requestFocus();
             }
           } else {
-            existingModelNameComboBox.addItem("No existing models found", false);
+            existingModelNameComboBox.addItem(new Model(-1,"No existing models found"), false);
           }
           currentModelSearchRequest = null;
           nextModelSearchString = null;
@@ -294,10 +294,10 @@ public strictfp class UploadDialog extends JDialog {
   private void updateExistingModelNameComboBox(String searchString) {
     clearExistingModelNameComboBox();
     if(searchString.length() > 0) {
-      existingModelNameComboBox.addItem("Searching", false);
+      existingModelNameComboBox.addItem(new Model(-1,"Searching"), false);
       setNextModelSearch(searchString);
     } else {
-      existingModelNameComboBox.addItem("Enter name of existing model", false);
+      existingModelNameComboBox.addItem(new Model(-1,"Enter name of existing model"), false);
       if(currentModelSearchRequest != null) {
         currentModelSearchRequest.abort();
       }
@@ -591,7 +591,7 @@ public strictfp class UploadDialog extends JDialog {
     formFields.add(existingModelNameSearchFieldPanel);
 
     formLabels.add(new JLabel(""));
-    existingModelNameComboBox = new DisableableComboBox();
+    existingModelNameComboBox = new DisableableComboBox<Model>();
     JPanel existingModelNameComboBoxPanel = new JPanel(new GridBagLayout());
     existingModelNameComboBoxPanel.add(existingModelNameComboBox, constraints);
     formFields.add(existingModelNameComboBoxPanel);
@@ -608,21 +608,21 @@ public strictfp class UploadDialog extends JDialog {
 
     modelGroupLabel = new JLabel("Model Group");
     formLabels.add(modelGroupLabel);
-    groupComboBox = new JComboBox();
+    groupComboBox = new JComboBox<Group>();
     JPanel groupComboBoxPanel = new JPanel(new GridBagLayout());
     groupComboBoxPanel.add(groupComboBox, constraints);
     formFields.add(groupComboBoxPanel);
 
     visibilityLabel = new JLabel("Visible By");
     formLabels.add(visibilityLabel);
-    visibilityComboBox = new DisableableComboBox();
+    visibilityComboBox = new DisableableComboBox<Permission>();
     JPanel visibilityComboBoxPanel = new JPanel(new GridBagLayout());
     visibilityComboBoxPanel.add(visibilityComboBox, constraints);
     formFields.add(visibilityComboBoxPanel);
 
     changeabilityLabel = new JLabel("Changeable By");
     formLabels.add(changeabilityLabel);
-    changeabilityComboBox = new DisableableComboBox();
+    changeabilityComboBox = new DisableableComboBox<Permission>();
     JPanel changeabilityComboBoxPanel = new JPanel(new GridBagLayout());
     changeabilityComboBoxPanel.add(changeabilityComboBox, constraints);
     formFields.add(changeabilityComboBoxPanel);

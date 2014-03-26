@@ -75,7 +75,7 @@ class WorldEditPanel(widget: Editable, compiler: CompilerServices, colorizer: Co
     buttons.setLayout(buttonsLayout)
 
     buttons.add(new JLabel(I18N.gui("origin.location") + " "))
-    positionChoices = new JComboBox()
+    positionChoices = new JComboBox[OriginConfiguration]()
     for(config <- settings.getOriginConfigurations.asScala)
        positionChoices.addItem(config)
     positionChoices.addItemListener(new LocationItemListener())

@@ -10,10 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public strictfp class DrawableList<T>
-    extends javax.swing.JList<T>
+public strictfp class DrawableList
+    extends javax.swing.JList<Shape>
     implements EditorDialog.VectorShapeContainer {
-  javax.swing.DefaultListModel listModel;
+  javax.swing.DefaultListModel<Shape> listModel;
   final ShapeList shapeList;
   List<Shape> shapes;
   private final ShapeChangeListener shapeChangeListener;
@@ -25,7 +25,7 @@ public strictfp class DrawableList<T>
     this.shapeList = shapeList;
     putClientProperty("Quaqua.List.style", "striped");
     setVisibleRowCount(rows);
-    listModel = new javax.swing.DefaultListModel();
+    listModel = new javax.swing.DefaultListModel<Shape>();
     setModel(listModel);
     setFixedCellHeight(height);
   }
@@ -39,7 +39,7 @@ public strictfp class DrawableList<T>
     listModel.clear();
     shapes = shapeList.getShapes();
     for (Shape shape : shapes) {
-      listModel.addElement(shape.getName());
+      listModel.addElement(shape);
     }
   }
 
@@ -62,7 +62,7 @@ public strictfp class DrawableList<T>
     int index = -1;
     while (++index < listModel.size())    // Iterate through all the items of the list until you have
     {                    //  the index of <name>
-      if (((String) listModel.elementAt(index)).equals(name)) {
+      if ((listModel.elementAt(index).getName()).equals(name)) {
         break;
       }
     }
@@ -70,7 +70,7 @@ public strictfp class DrawableList<T>
     ensureIndexIsVisible(index);
   }
 
-  public Object elementAt(int index) {
+  public Shape elementAt(int index) {
     return listModel.elementAt(index);
   }
 

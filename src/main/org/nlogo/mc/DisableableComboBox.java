@@ -8,42 +8,43 @@ import javax.swing.UIManager;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.awt.Component;
 
-public strictfp class DisableableComboBox extends JComboBox {
 
-  private class Item {
+class Item<T> {
 
-    private Object obj;
-    private boolean enabled;
+  private T obj;
+  private boolean enabled;
 
-    public Item(Object obj, boolean enabled) {
-      this.obj = obj;
-      this.enabled = enabled;
-    }
-
-    public Object getObj() {
-      return obj;
-    }
-
-    public boolean isEnabled() {
-      return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-      this.enabled = enabled;
-    }
-
-    public String toString() {
-      return obj.toString();
-    }
-
+  public Item(T obj, boolean enabled) {
+    this.obj = obj;
+    this.enabled = enabled;
   }
+
+  public T getObj() {
+    return obj;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  public String toString() {
+    return obj.toString();
+  }
+
+}
+
+public strictfp class DisableableComboBox<T> extends JComboBox<Item<T> > {
 
   public DisableableComboBox() {
     super();
     setRenderer(new BasicComboBoxRenderer() {
-      public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+      public Component getListCellRendererComponent(JList<Item<T> > list, Item<T> value, int index, boolean isSelected, boolean cellHasFocus) {
         Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        if(value != null && !(((Item)value).isEnabled())) {
+        if(value != null && !value.isEnabled()) {
           component.setEnabled(false);
           component.setForeground(UIManager.getColor("ComboBox.disabledForeground"));
           component.setVisible(false);
@@ -56,15 +57,15 @@ public strictfp class DisableableComboBox extends JComboBox {
     });
   }
 
-  public int addItem(Object anObject, boolean isObjectEnabled) {
-    Item item = new Item(anObject, isObjectEnabled);
+  public int addItem(T anObject, boolean isObjectEnabled) {
+    Item<T> item = new Item<T>(anObject, isObjectEnabled);
     super.addItem(item);
     return getItemCount() - 1;
   }
 
   public void setIndexEnabled(int index, boolean isObjectEnabled) {
     if(index >= 0 && index < getItemCount()) {
-      Item item = (Item)(getItemAt(index));
+      Item<T> item = getItemAt(index);
       item.setEnabled(isObjectEnabled);
     }
   }
@@ -80,12 +81,12 @@ public strictfp class DisableableComboBox extends JComboBox {
   //Use getSelectedObject instead of getSelectedItem
   //Overriding getSelectedObject causes problems since internally JComboBox would expect getSelectedItem to return a
   //type Item
-  public Object getSelectedObject() {
-    Object selectedItem = super.getSelectedItem();
+  public T getSelectedObject() {
+    Item<T> selectedItem = (Item<T>)super.getSelectedItem();
     if(selectedItem == null) {
       return null;
     } else {
-      return ((Item)(selectedItem)).getObj();
+      return selectedItem.getObj();
     }
   }
 

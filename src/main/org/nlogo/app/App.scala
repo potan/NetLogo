@@ -514,7 +514,7 @@ class App extends
         val modelStr = org.nlogo.util.Utils.url2String(commandLineURL)
         fileMenu.openFromSource(
           modelStr,
-          java.net.URLDecoder.decode(commandLineURL.reverse takeWhile (_ != '/') reverse, "UTF-8"), "Starting...", ModelType.Library)
+          java.net.URLDecoder.decode((commandLineURL.reverse takeWhile (_ != '/')).reverse, "UTF-8"), "Starting...", ModelType.Library)
 
         import org.nlogo.awt.EventQueue, org.nlogo.swing.Implicits.thunk2runnable
         Option(System.getProperty(ImportRawWorldURLProp)) map {
@@ -631,7 +631,7 @@ class App extends
     val locales = I18N.availableLocales
     val languages = locales.map{l => l.getDisplayName(l) }
     val index = org.nlogo.swing.OptionDialog.showAsList(frame,
-      "Change Language", "Choose a new language.", languages.asInstanceOf[Array[Object]])
+      "Change Language", "Choose a new language.", languages /*.asInstanceOf[Array[Object]]*/)
     if(index > -1) {
       val chosenLocale = locales(index)
       val netLogoPrefs = java.util.prefs.Preferences.userRoot.node("/org/nlogo/NetLogo")

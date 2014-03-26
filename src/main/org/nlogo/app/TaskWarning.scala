@@ -11,7 +11,7 @@ import org.nlogo.swing.OptionDialog
  * since the file won't re-import.
  */
 object TaskWarning {
-  val buttons = Array[AnyRef](I18N.gui.get("common.buttons.continue"),
+  val buttons = Array[String](I18N.gui.get("common.buttons.continue"),
                               I18N.gui.get("common.buttons.cancel"))
   val message =
     "Some of your agent variables contain tasks. You may export anyway, " +

@@ -11,8 +11,7 @@ import org.nlogo.shape.Polygon;
 import org.nlogo.shape.Rectangle;
 import org.nlogo.shape.VectorShape;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Vector;
 import java.util.Observable;
 
 strictfp class EditorDialog
@@ -45,7 +44,7 @@ strictfp class EditorDialog
   // - SAB/ST 6/11/04
   private javax.swing.undo.UndoableEdit undoableEdit;
 
-  private final javax.swing.JComboBox colorSelection;
+  private final javax.swing.JComboBox<Integer> colorSelection;
 
   private boolean fillShapes = true;
   private boolean shapeRotatable = true;
@@ -263,8 +262,8 @@ strictfp class EditorDialog
 
     // Add the ComboBox to allow users to specify which color is
     // recolorable
-    List<Integer> colors =
-        new ArrayList<Integer>
+    Vector<Integer> colors =
+        new Vector<Integer>
             (org.nlogo.api.Color.getColorNamesArray().length);
     javax.swing.ButtonGroup colorGroup =
         new javax.swing.ButtonGroup();
@@ -292,7 +291,7 @@ strictfp class EditorDialog
       colors.add(Integer.valueOf(icolor));
     }
 
-    colorSelection = new javax.swing.JComboBox(colors.toArray());
+    colorSelection = new javax.swing.JComboBox<Integer>(colors);
     colorSelection.setRenderer(new ColorCellRenderer());
     colorSelection.addActionListener
         (new java.awt.event.ActionListener() {
