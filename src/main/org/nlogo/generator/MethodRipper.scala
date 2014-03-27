@@ -2,6 +2,7 @@
 
 package org.nlogo.generator
 
+import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes._
 import java.lang.reflect.{ Field, Method }
 import org.objectweb.asm
@@ -13,7 +14,7 @@ private class MethodRipper(method: Method, instr: Instruction, mvOut: MethodVisi
   def writeTransformedBytecode() {
     val reader = PrimitiveCache.getClassReader(instr.getClass)
     val extractor = new MethodExtractorClassAdapter
-    reader.accept(extractor, 0)
+    reader.accept(extractor, ClassReader.EXPAND_FRAMES /*0*/)
     if (errorLog.length > 0) throw new IllegalStateException(errorLog.toString)
   }
   private class MethodExtractorClassAdapter extends asm.commons.EmptyVisitor {

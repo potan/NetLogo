@@ -27,7 +27,7 @@ class TestStrictFP extends FunSuite {
       reader
     }
     val visitor = new StrictFPVisitor
-    reader.accept(visitor, ClassReader.SKIP_DEBUG)
+    reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.EXPAND_FRAMES)
     visitor.badMethods.toList
   }
 

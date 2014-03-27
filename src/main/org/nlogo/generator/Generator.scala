@@ -253,7 +253,7 @@ class Generator(source: String, procedure: Procedure, profilingEnabled: Boolean)
       result.disassembly = new org.nlogo.util.Thunk[String] {
         def compute = {
           val sw = new java.io.StringWriter
-          new ClassReader(bytecode).accept(new TraceClassVisitor(new java.io.PrintWriter(sw)), 0)
+          new ClassReader(bytecode).accept(new TraceClassVisitor(new java.io.PrintWriter(sw)), ClassReader.EXPAND_FRAMES /*0*/)
           // (?s) = let dot match newlines. match until blank line (don't include init method)
           """(?s)public final strictfp (?:perform|report).*?\n(.*?)\n\s*\n""".r
             .findFirstMatchIn(sw.getBuffer.toString).get.subgroups.head

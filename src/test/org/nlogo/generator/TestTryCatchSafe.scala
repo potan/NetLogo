@@ -44,7 +44,7 @@ class TestTryCatchSafe extends FunSuite {
     val reader = PrimitiveCache.getClassReader(c)
     for(method <- BytecodeUtils.getMethods(c))
       reader.accept(new MethodExtractorClassAdapter(method),
-                    ClassReader.SKIP_DEBUG)
+                    ClassReader.SKIP_DEBUG | ClassReader.EXPAND_FRAMES)
   }
 
   class MethodExtractorClassAdapter(method: Method) extends EmptyVisitor {

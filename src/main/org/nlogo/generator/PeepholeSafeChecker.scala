@@ -49,7 +49,7 @@ private class PeepholeSafeChecker(profilingEnabled: Boolean = false) {
   private def processClass(c: Class[_]) {
     val reader = PrimitiveCache.getClassReader(c)
     for (m <- BytecodeUtils.getMethods(c, profilingEnabled))
-      reader.accept(new MethodExtractorClassAdapter(m), ClassReader.SKIP_DEBUG)
+      reader.accept(new MethodExtractorClassAdapter(m), ClassReader.SKIP_DEBUG | ClassReader.EXPAND_FRAMES)
   }
   private class MethodExtractorClassAdapter(method: Method) extends EmptyVisitor {
     override def visitMethod(arg0: Int, name: String, descriptor: String, signature: String, exceptions: Array[String]): MethodVisitor =
