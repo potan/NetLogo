@@ -8,7 +8,7 @@ resourceDirectory in Compile <<= baseDirectory(_ / "resources")
 
 scalacOptions ++=
 //  "-deprecation -unchecked -Xfatal-warnings -Xcheckinit -encoding us-ascii -optimize -Yinline-warnings -feature"
-  "-unchecked -Xcheckinit -encoding us-ascii -Yinline-warnings -feature"
+  "-encoding us-ascii"
   .split(" ").toSeq
 
 javacOptions ++=
@@ -68,13 +68,15 @@ moduleConfigurations += ModuleConfiguration("javax.media", JavaNet2Repository)
 
 libraryDependencies ++= Seq(
   "asm" % "asm-all"  % "3.3.1",
+//  "org.ow2.asm" % "asm" % "latest.integration" /*"4.1"*/,
+//  "com.mycila" % "mycila-event" % "latest.integration",
   "org.picocontainer" % "picocontainer"  % "latest.integration" /* % "2.13.6"*/,
   "log4j" % "log4j"  % "latest.integration" /* % "1.2.16"*/,
   "javax.media" % "jmf"  % "latest.integration" /* % "2.1.1e"*/,
-  "org.pegdown" % "pegdown"  % "latest.integration" /* % "1.1.0"*/,
-  "org.parboiled" % "parboiled-java"  % "latest.integration" /* % "1.0.2"*/,
-//  "steveroy" % "mrjadapter"  % "1.2" from "http://ccl.northwestern.edu/devel/mrjadapter-1.2.jar",
-//  "org.jhotdraw" % "jhotdraw"  % "6.0b1" from "http://ccl.northwestern.edu/devel/jhotdraw-6.0b1.jar",
+  "org.pegdown" % "pegdown" % "1.1.0",
+  "org.parboiled" % "parboiled-java"  % "1.0.2",
+  "steveroy" % "mrjadapter"  % "1.2" from "http://ccl.northwestern.edu/devel/mrjadapter-1.2.jar",
+  "org.jhotdraw" % "jhotdraw"  % "6.0b1" from "http://ccl.northwestern.edu/devel/jhotdraw-6.0b1.jar",
 //  "ch.randelshofer" % "quaqua"  % "7.3.4" from "http://ccl.northwestern.edu/devel/quaqua-7.3.4.jar",
   "org.devzendo" % "Quaqua" % "7.3.4",
 //  "ch.randelshofer" % "swing-layout"  % "7.3.4" from "http://ccl.northwestern.edu/devel/swing-layout-7.3.4.jar",
@@ -85,7 +87,7 @@ libraryDependencies ++= Seq(
   "org.jmock" % "jmock-legacy" % "latest.integration" /* % "2.5.1" */ % "test",
   "org.jmock" % "jmock-junit4" % "latest.integration" /* % "2.5.1" */ % "test",
   "org.scalacheck" %% "scalacheck" % "latest.integration" /* % "1.10.0" */ % "test",
-  "org.scalatest" %% "scalatest" % "latest.integration" /* "1.8" */ % "test",
+  "org.scalatest" %% "scalatest" % "latest.integration" /*"2.0"*/ % "test",
   "org.apache.httpcomponents" % "httpclient" % "latest.integration" /*"4.2"*/,
   "org.apache.httpcomponents" % "httpmime" % "latest.integration" /*"4.2"*/,
   "com.googlecode.json-simple" % "json-simple" % "latest.integration" /*"1.1.1"*/
