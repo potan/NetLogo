@@ -158,7 +158,7 @@ abstract class ManagerDialog(parentFrame: java.awt.Frame,
     }
 
     if (selected.length == 0 ||
-            (selected.length == 1 && ShapeList.isDefaultShapeName(shapesList.elementAt(selected(0)).asInstanceOf[String])))
+            (selected.length == 1 && ShapeList.isDefaultShapeName(shapesList.elementAt(selected(0)).getName)))
       deleteButton.setEnabled(false)
     else // You can't delete the default turtle shapes
       deleteButton.setEnabled(true)
