@@ -2,6 +2,8 @@
 
 package org.nlogo.nvm;
 
+import org.nlogo.nvm.ContextHelper.*;
+
 import org.nlogo.agent.Agent;
 import org.nlogo.agent.AgentSet;
 import org.nlogo.api.Let;
@@ -268,30 +270,33 @@ public final strictfp class Context {
   }
 
   public Object getLet(Let let) {
-    scala.collection.immutable.List<LetBinding> rest = letBindings;
+    return ContextHelper.getLet(job, letBindings, let);
+/*    scala.collection.immutable.List<LetBinding> rest = letBindings;
     while ((Object) rest != scala.collection.immutable.Nil$.MODULE$) // NOPMD
     {
       LetBinding binding = rest.head();
       if (let == binding.let) {
         return binding.value;
       }
-      rest = rest.tail().toList();
+      rest = rest.tail();
     }
     return job.parentContext.getLet(let);
+*/
   }
 
   public void setLet(Let let, Object value) {
-    scala.collection.immutable.List<LetBinding> rest = letBindings;
-    while ((Object) rest != scala.collection.immutable.Nil$.MODULE$) // NOPMD
-    {
-      LetBinding binding = rest.head();
-      if (let == binding.let) {
-        binding.value = value;
-        return;
-      }
-      rest = rest.tail().toList();
-    }
-    job.parentContext.setLet(let, value);
+    ContextHelper.setLet(job, letBindings, let, value);
+//    scala.collection.immutable.List<LetBinding> rest = letBindings;
+//    while ((Object) rest != scala.collection.immutable.Nil$.MODULE$) // NOPMD
+//    {
+//      LetBinding binding = rest.head();
+//      if (let == binding.let) {
+//        binding.value = value;
+//        return;
+//      }
+//      rest = rest.tail();
+//    }
+//    job.parentContext.setLet(let, value);
   }
 
 
