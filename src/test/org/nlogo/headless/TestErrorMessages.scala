@@ -6,11 +6,11 @@ package org.nlogo.headless
 // they go beyond the capabilities of the txt-based stuff.  (In the long run, perhaps
 // that framework should be extended so these tests could be done in it.)  - ST 3/18/08, 8/21/13
 
-import org.scalatest.{ FunSuite, BeforeAndAfterEach }
+import org.scalatest.{ FunSuiteLike, BeforeAndAfterEach }
 import org.nlogo.api.CompilerException
 import org.nlogo.nvm.{ ArgumentTypeException, EngineException }
 
-class TestErrorMessages extends AbstractTestLanguage with FunSuite with BeforeAndAfterEach {
+class TestErrorMessages extends AbstractTestLanguage with FunSuiteLike with BeforeAndAfterEach {
   override def beforeEach() { init() }
   override def afterEach() { workspace.dispose() }
   test("perspectiveChangeWithOf") {

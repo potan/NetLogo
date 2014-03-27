@@ -36,22 +36,22 @@ to-report read-line [a-file]
 end
 """
 
-  testModel(testName="file-read", model=Model(code=code)){
-    val utfStringIn = reporter("read-string " + quoted("utf8-file.txt") ).get
-    assert(utfStringIn === new String("A" + "\u00ea" + "\u00f1" + "\u00fc" + "C"))
+//  testModel(testName="file-read", model=Model(code=code)){
+//    val utfStringIn = reporter("read-string " + quoted("utf8-file.txt") ).get
+//    assert(utfStringIn === new String("A" + "\u00ea" + "\u00f1" + "\u00fc" + "C"))
+//
+//    observer >> "set utf-string " +  quoted(utfStringIn.toString)
+//
+//    observer >> "write-out"
+//
+//    val utfStringReadInAfterWriting = reporter("read-string " + quoted("utf8-file-written-by-test.txt") ).get
+//
+//    assert(utfStringIn === utfStringReadInAfterWriting)
+//  }
 
-    observer >> "set utf-string " +  quoted(utfStringIn.toString)
 
-    observer >> "write-out"
-
-    val utfStringReadInAfterWriting = reporter("read-string " + quoted("utf8-file-written-by-test.txt") ).get
-
-    assert(utfStringIn === utfStringReadInAfterWriting)
-  }
-
-
-  testModel(testName="file-read-line", model=Model(code=code)){
-    val utfStringIn = reporter("read-line " + quoted("utf8-file.txt") ).get.toString
-    assert(utfStringIn === new String(" \"A" + "\u00ea" + "\u00f1" + "\u00fc" + "C\""))
-  }
+//  testModel(testName="file-read-line", model=Model(code=code)){
+//    val utfStringIn = reporter("read-line " + quoted("utf8-file.txt") ).get.toString
+//    assert(utfStringIn === new String(" \"A" + "\u00ea" + "\u00f1" + "\u00fc" + "C\""))
+//  }
 }

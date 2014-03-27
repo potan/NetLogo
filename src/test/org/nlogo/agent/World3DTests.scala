@@ -2,10 +2,10 @@
 
 package org.nlogo.agent
 
-import org.scalatest.FunSuite
+import org.scalatest.FunSuiteLike
 import org.nlogo.api.{ WorldDimensions, WorldDimensions3D }
 
-class World3DTests extends AbstractTestWorld with FunSuite
+class World3DTests extends AbstractTestWorld with FunSuiteLike
 {
 
   val worldSquare = new WorldDimensions3D(-2, 2, -2, 2, -2, 2)

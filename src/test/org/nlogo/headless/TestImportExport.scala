@@ -2,11 +2,11 @@
 
 package org.nlogo.headless
 
-import org.scalatest.{ FunSuite, OneInstancePerTest, BeforeAndAfterEach }
+import org.scalatest.{ FunSuiteLike, OneInstancePerTest, BeforeAndAfterEach }
 import org.nlogo.api.{ Perspective, Version }
 import org.nlogo.util.SlowTest
 
-class TestImportExport extends AbstractTestLanguage with FunSuite
+class TestImportExport extends AbstractTestLanguage with FunSuiteLike
 with BeforeAndAfterEach with OneInstancePerTest with SlowTest {
 
   override def beforeEach() {

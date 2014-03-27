@@ -14,7 +14,7 @@ object AbstractTestLanguage {
   case object RunMode extends TestMode
 }
 
-abstract class AbstractTestLanguage extends Assertions {
+trait /*abstract class*/ AbstractTestLanguage extends Assertions {
 
   import AbstractTestLanguage._
 
@@ -78,7 +78,7 @@ abstract class AbstractTestLanguage extends Assertions {
       fail("failed to cause runtime error: \"" + reporter + "\"")
     }
     catch {
-      case ex =>
+      case ex : Throwable =>
         // PureConstantOptimizer turns some errors that would be runtime errors into compile-time
         // errors, so we have to check for those
         if(ex.getMessage.startsWith(CompilerException.RuntimeErrorAtCompileTimePrefix))

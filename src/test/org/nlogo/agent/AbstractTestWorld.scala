@@ -7,7 +7,7 @@ import org.nlogo.api.WorldDimensions
 
 // Exists to be separately extended in 2D and 3D versions. - ST 10/18/10
 
-abstract class AbstractTestWorld extends Assertions {
+trait /*abstract class*/ AbstractTestWorld extends Assertions {
 
   def makeWorld(dimensions: WorldDimensions): World
   def makeTurtle(world: World, cors: Array[Int]): Turtle
